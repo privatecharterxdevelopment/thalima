@@ -157,15 +157,9 @@ export function SiteChrome({ children, title }: { children: ReactNode; title?: s
 
   const close = () => setMenuOpen(false)
 
-  const infoMenu = (place: 'header' | 'foot') => (
+  const infoMenu = (
     <div
-      className={[
-        'lp-drop',
-        place === 'header' ? 'lp-info-header' : 'lp-info-foot',
-        drop === 'info' ? 'is-open' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={['lp-drop', 'lp-info-header', drop === 'info' ? 'is-open' : ''].filter(Boolean).join(' ')}
       onMouseEnter={() => setDrop('info')}
       onMouseLeave={() => setDrop(null)}
     >
@@ -197,7 +191,7 @@ export function SiteChrome({ children, title }: { children: ReactNode; title?: s
             <img src="/logo.png" alt="Thalima" />
           </Link>
           <nav className="lp-tools" aria-label="Quick links">
-            {infoMenu('header')}
+            {infoMenu}
 
             <div
               className={drop === 'lang' ? 'lp-drop is-open' : 'lp-drop'}
@@ -351,7 +345,6 @@ export function SiteChrome({ children, title }: { children: ReactNode; title?: s
               </Link>
             </div>
             <div className="lp-foot-legal">
-              {infoMenu('foot')}
               <p>{t.copyYear}</p>
               <Link to="/privacy">{t.privacy}</Link>
               <Link to="/login">{t.crewLogin}</Link>
