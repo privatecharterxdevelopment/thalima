@@ -322,21 +322,32 @@
   bottom: calc(1.6rem + env(safe-area-inset-bottom));
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 2.4rem;
-  padding: 1.6rem 2rem;
-  background: var(--lp-paper);
-  border: 1px solid var(--lp-line);
-  border-radius: 16px;
-  box-shadow: 0 18px 50px rgba(12, 34, 56, 0.12);
+  gap: 1.6rem 2rem;
+  padding: 1.35rem 1.8rem 1.35rem 1.45rem;
+  background: linear-gradient(180deg, rgba(248, 249, 251, 0.62), rgba(228, 232, 236, 0.5));
+  backdrop-filter: blur(24px) saturate(1.12);
+  -webkit-backdrop-filter: blur(24px) saturate(1.12);
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  border-radius: 18px;
+  box-shadow: 0 18px 50px rgba(11, 22, 34, 0.2);
+  color: #0b1622;
+}
+
+.lp-cookie-mark {
+  flex-shrink: 0;
+  display: block;
+  width: 3.85rem;
+  height: auto;
+  object-fit: contain;
 }
 
 .lp-cookie p {
+  flex: 1 1 auto;
   max-width: 48ch;
   margin: 0;
   font-size: 14.5px;
   line-height: 1.6;
-  color: var(--lp-muted);
+  color: rgba(11, 22, 34, 0.72);
 }
 
 .lp-cookie > div {
@@ -344,25 +355,31 @@
   align-items: center;
   gap: 12px;
   flex-shrink: 0;
+  margin-left: auto;
 }
 
 .lp-cookie a {
   font-size: 13.5px;
   font-weight: 500;
   white-space: nowrap;
+  color: rgba(11, 22, 34, 0.55);
+}
+
+.lp-cookie a:hover {
+  color: #0b1622;
 }
 
 .lp-cookie button.lp-cookie-ok {
-  background: var(--lp-ink);
-  color: var(--lp-bg);
-  -webkit-text-fill-color: var(--lp-bg);
+  background: #0b1622;
+  color: #eef2f6;
+  -webkit-text-fill-color: #eef2f6;
 }
 
 .lp-cookie button.lp-cookie-min {
   background: transparent;
-  color: var(--lp-ink);
-  -webkit-text-fill-color: var(--lp-ink);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--lp-ink) 55%, transparent);
+  color: #0b1622;
+  -webkit-text-fill-color: #0b1622;
+  box-shadow: inset 0 0 0 1px rgba(11, 22, 34, 0.28);
 }
 
 .lp-info-foot {
@@ -1875,12 +1892,28 @@ html.is-site.is-site-night #root {
     left: 1.2rem;
     right: 1.2rem;
     bottom: calc(1.2rem + env(safe-area-inset-bottom));
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1.2rem;
-    padding: 1.4rem 1.4rem 1.5rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'mark copy'
+      'mark actions';
+    align-items: center;
+    gap: 0.7rem 1.15rem;
+    padding: 1.2rem 1.25rem 1.3rem 1.15rem;
   }
-  .lp-cookie > div { flex-wrap: wrap; }
+  .lp-cookie-mark {
+    grid-area: mark;
+    width: 2.7rem;
+  }
+  .lp-cookie p {
+    grid-area: copy;
+    max-width: none;
+  }
+  .lp-cookie > div {
+    grid-area: actions;
+    flex-wrap: wrap;
+    margin-left: 0;
+  }
   .lp-split,
   .lp-form-row,
   .lp-contact,
@@ -1908,6 +1941,31 @@ html.is-site.is-site-night #root {
   .lp-svc-flip img { order: 0; }
   .lp-cut { grid-template-columns: 1fr; }
   .lp-cut img { height: 32vh; clip-path: none; }
+  .lp-select-head {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.8rem;
+  }
+  .lp-select-head h2 {
+    white-space: nowrap;
+    font-size: clamp(18px, 5.1vw, 26px);
+  }
+  .lp-pills {
+    justify-content: center;
+  }
+  .lp-journal-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .lp-journal h2 {
+    white-space: nowrap;
+  }
+  .lp-journal-head > p {
+    max-width: none;
+    text-align: left;
+  }
   .lp-cards,
   .lp-posts { grid-template-columns: 1fr; }
   .lp-card-tall { grid-column: auto; grid-row: auto; min-height: 320px; }

@@ -384,6 +384,7 @@ function CookieBanner() {
 
   return (
     <aside className="lp-cookie" role="dialog" aria-label="Cookies">
+      <img className="lp-cookie-mark" src="/mark.png" alt="" />
       <p>{t.cookieBody}</p>
       <div>
         <button type="button" className="lp-btn lp-cookie-ok" onClick={() => save('all')}>
