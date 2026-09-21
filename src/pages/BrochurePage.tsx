@@ -13,7 +13,7 @@ export function BrochurePage() {
         </header>
 
         <div className="lp-page-media">
-          <img src="/yacht/cover-sailing.jpg" alt="Thalima brochure cover" />
+          <img src="/yacht/cover-sailing.jpg" alt="Thalima brochure cover" loading="lazy" decoding="async" />
         </div>
 
         <p className="lp-page-cta">

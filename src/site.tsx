@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useCallback,
   type ReactNode,
 } from 'react'
 import { Link, NavLink } from 'react-router-dom'
@@ -13,12 +14,11 @@ import {
   copy,
   LANGS,
   LANG_KEY,
-  THEME_KEY,
   readLang,
-  readNight,
   type Lang,
   type SiteCopy,
 } from './lib/siteCopy'
+import { useStore } from './store'
 
 export const CHARTER_TO = 'charter@thalima.com'
 export const MAIL = `mailto:${CHARTER_TO}?subject=Thalima%20charter`
@@ -47,13 +47,13 @@ export function useSiteCopy() {
 }
 
 export function SiteProvider({ children }: { children: ReactNode }) {
+  const { theme, setTheme } = useStore()
   const [lang, setLangState] = useState<Lang>('en')
-  const [night, setNightState] = useState(true)
+  const night = theme === 'dark'
   const t = copy[lang]
 
   useEffect(() => {
     setLangState(readLang())
-    setNightState(readNight())
   }, [])
 
   const setLang = (next: Lang) => {
@@ -61,14 +61,16 @@ export function SiteProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(LANG_KEY, next)
   }
 
-  const setNight = (next: boolean) => {
-    setNightState(next)
-    localStorage.setItem(THEME_KEY, next ? 'dark' : 'light')
-  }
+  const setNight = useCallback(
+    (next: boolean) => {
+      setTheme(next ? 'dark' : 'light')
+    },
+    [setTheme],
+  )
 
   const value = useMemo(
     () => ({ lang, setLang, night, setNight, t }),
-    [lang, night, t],
+    [lang, night, setNight, t],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
@@ -97,14 +99,38 @@ export function SiteChrome({ children, title }: { children: ReactNode; title?: s
 
   useEffect(() => {
     if (!menuOpen) return
-    const prev = document.body.style.overflow
+    const html = document.documentElement
+    const y = window.scrollY
+    html.classList.add('is-site-menu')
+    html.style.overflow = 'hidden'
     document.body.style.overflow = 'hidden'
+    document.body.style.position = 'fixed'
+    document.body.style.top = `-${y}px`
+    document.body.style.left = '0'
+    document.body.style.right = '0'
+    document.body.style.width = '100%'
+
+    const block = (e: Event) => {
+      e.preventDefault()
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMenuOpen(false)
     }
+    window.addEventListener('wheel', block, { passive: false })
+    window.addEventListener('touchmove', block, { passive: false })
     window.addEventListener('keydown', onKey)
     return () => {
-      document.body.style.overflow = prev
+      html.classList.remove('is-site-menu')
+      html.style.overflow = ''
+      document.body.style.overflow = ''
+      document.body.style.position = ''
+      document.body.style.top = ''
+      document.body.style.left = ''
+      document.body.style.right = ''
+      document.body.style.width = ''
+      window.scrollTo(0, y)
+      window.removeEventListener('wheel', block)
+      window.removeEventListener('touchmove', block)
       window.removeEventListener('keydown', onKey)
     }
   }, [menuOpen])
@@ -131,46 +157,47 @@ export function SiteChrome({ children, title }: { children: ReactNode; title?: s
 
   const close = () => setMenuOpen(false)
 
+  const infoMenu = (place: 'header' | 'foot') => (
+    <div
+      className={[
+        'lp-drop',
+        place === 'header' ? 'lp-info-header' : 'lp-info-foot',
+        drop === 'info' ? 'is-open' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      onMouseEnter={() => setDrop('info')}
+      onMouseLeave={() => setDrop(null)}
+    >
+      <button
+        className="lp-tool lp-info-i"
+        type="button"
+        aria-haspopup="true"
+        aria-expanded={drop === 'info'}
+        aria-label={t.info}
+        onClick={() => setDrop((d) => (d === 'info' ? null : 'info'))}
+      >
+        i
+      </button>
+      <div className="lp-drop-menu">
+        <NavLink to="/brochure" onClick={close}>
+          {t.brochure}
+        </NavLink>
+        <NavLink to="/specs" onClick={close}>
+          {t.specs}
+        </NavLink>
+      </div>
+    </div>
+  )
+
   return (
     <div className={['lp', menuOpen ? 'is-menu' : '', night ? 'is-night' : ''].filter(Boolean).join(' ')}>
         <header className="lp-nav">
-          <button
-            className="lp-menu-btn"
-            type="button"
-            aria-label={menuOpen ? t.closeMenu : t.openMenu}
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen((open) => !open)}
-          >
-            +
-          </button>
           <Link className="lp-brand" to="/" onClick={close} aria-label="Thalima">
             <img src="/logo.png" alt="Thalima" />
           </Link>
           <nav className="lp-tools" aria-label="Quick links">
-            <div
-              className={drop === 'info' ? 'lp-drop is-open' : 'lp-drop'}
-              onMouseEnter={() => setDrop('info')}
-              onMouseLeave={() => setDrop(null)}
-            >
-              <button
-                className="lp-tool lp-info-i"
-                type="button"
-                aria-haspopup="true"
-                aria-expanded={drop === 'info'}
-                aria-label={t.info}
-                onClick={() => setDrop((d) => (d === 'info' ? null : 'info'))}
-              >
-                i
-              </button>
-              <div className="lp-drop-menu">
-                <NavLink to="/brochure" onClick={close}>
-                  {t.brochure}
-                </NavLink>
-                <NavLink to="/specs" onClick={close}>
-                  {t.specs}
-                </NavLink>
-              </div>
-            </div>
+            {infoMenu('header')}
 
             <div
               className={drop === 'lang' ? 'lp-drop is-open' : 'lp-drop'}
@@ -198,8 +225,10 @@ export function SiteChrome({ children, title }: { children: ReactNode; title?: s
                       setDrop(null)
                     }}
                   >
-                    {item.name}
-                    {item.id === 'en' ? ' (default)' : ''}
+                    <span className="lp-lang-flag" aria-hidden="true">
+                      {item.flag}
+                    </span>
+                    <span className="lp-lang-name">{item.name}</span>
                   </button>
                 ))}
               </div>
@@ -223,6 +252,15 @@ export function SiteChrome({ children, title }: { children: ReactNode; title?: s
               {night ? <Sun size={19} strokeWidth={1.6} /> : <Moon size={19} strokeWidth={1.6} />}
             </button>
           </nav>
+          <button
+            className="lp-menu-btn"
+            type="button"
+            aria-label={menuOpen ? t.closeMenu : t.openMenu}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            +
+          </button>
         </header>
 
         <div
@@ -313,6 +351,7 @@ export function SiteChrome({ children, title }: { children: ReactNode; title?: s
               </Link>
             </div>
             <div className="lp-foot-legal">
+              {infoMenu('foot')}
               <p>{t.copyYear}</p>
               <Link to="/privacy">{t.privacy}</Link>
               <Link to="/login">{t.crewLogin}</Link>
@@ -347,10 +386,10 @@ function CookieBanner() {
     <aside className="lp-cookie" role="dialog" aria-label="Cookies">
       <p>{t.cookieBody}</p>
       <div>
-        <button type="button" className="lp-btn" onClick={() => save('all')}>
+        <button type="button" className="lp-btn lp-cookie-ok" onClick={() => save('all')}>
           {t.cookieAccept}
         </button>
-        <button type="button" className="lp-btn lp-btn-ghost" onClick={() => save('essential')}>
+        <button type="button" className="lp-btn lp-btn-ghost lp-cookie-min" onClick={() => save('essential')}>
           {t.cookieEssential}
         </button>
         <Link to="/privacy">{t.privacy}</Link>

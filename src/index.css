@@ -26,23 +26,23 @@
 }
 
 html[data-theme='dark'] {
-  --bg: #12151c;
-  --chrome: #0c0e13;
-  --paper: #1a1e27;
-  --paper-2: #161a22;
-  --ink: #eceef4;
-  --muted: #8b91a3;
-  --faint: #6d7384;
-  --line: rgba(255, 255, 255, 0.08);
-  --sea: #eceef4;
+  --bg: #121a24;
+  --chrome: #0b1622;
+  --paper: #16202c;
+  --paper-2: #121b26;
+  --ink: #eef2f6;
+  --muted: #9aa4b0;
+  --faint: #7b8594;
+  --line: rgba(238, 242, 246, 0.08);
+  --sea: #eef2f6;
   --ok: #4ade80;
   --soon: #fbbf24;
   --now: #fb7185;
   --emergency: #f87171;
   --accent: #7c6cff;
-  --glass: #1a1e27;
-  --glass-strong: #1a1e27;
-  --glass-edge: rgba(255, 255, 255, 0.08);
+  --glass: #16202c;
+  --glass-strong: #16202c;
+  --glass-edge: rgba(238, 242, 246, 0.08);
   color-scheme: dark;
 }
 
@@ -62,6 +62,15 @@ html.is-site #root {
 html.is-site {
   overflow-x: clip;
   overflow-y: auto;
+}
+
+html.is-site.is-site-menu,
+html.is-site.is-site-menu body,
+html.is-site.is-site-menu #root {
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  height: 100%;
+  min-height: 100%;
 }
 
 html.is-site.is-site-night,
@@ -105,8 +114,8 @@ html.is-gate body,
 html.is-gate #root {
   height: 100%;
   overflow: hidden;
-  background: #f4f1ec;
-  color: #0c2238;
+  background: #0b1622;
+  color: #eef2f6;
   font-family: Inter, 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif;
 }
 
@@ -116,7 +125,7 @@ html.is-gate #root {
   height: 100svh;
   height: 100dvh;
   padding: 1.4rem;
-  color: #0c2238;
+  color: #eef2f6;
   font-family: Inter, 'SF Pro Display', 'SF Pro Text', -apple-system, BlinkMacSystemFont, Helvetica Neue, sans-serif;
 }
 
@@ -127,8 +136,8 @@ html.is-gate #root {
   min-height: 0;
   overflow: hidden;
   border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 18px 60px rgba(12, 34, 56, 0.08);
+  background: #141e2a;
+  box-shadow: none;
 }
 
 .gate-form {
@@ -151,7 +160,7 @@ html.is-gate #root {
 .gate-lead {
   max-width: 38ch;
   margin: 1rem 0 0;
-  color: #6a7380;
+  color: #9aa4b0;
   font-size: 16px;
   line-height: 1.6;
 }
@@ -179,6 +188,8 @@ html.is-gate #root {
   display: block;
   height: 28px;
   width: auto;
+  filter: brightness(0) invert(1);
+  opacity: 0.94;
 }
 
 .gate-field {
@@ -186,7 +197,7 @@ html.is-gate #root {
   gap: 8px;
   font-size: 13px;
   font-weight: 550;
-  color: #3c4654;
+  color: #c5ccd4;
 }
 
 .gate-field input,
@@ -196,14 +207,19 @@ html.is-gate #root {
   padding: 0 16px;
   border: 1px solid transparent;
   border-radius: 12px;
-  background: #f4f5f7;
-  color: #0c2238;
+  background: #0b1622;
+  color: #eef2f6;
   outline: none;
 }
 
+.gate-field input::placeholder,
+.gate-pw input::placeholder {
+  color: #7b8594;
+}
+
 .gate-field > input:focus {
-  border-color: rgba(12, 34, 56, 0.22);
-  background: #fff;
+  border-color: rgba(238, 242, 246, 0.22);
+  background: #0f1c2a;
 }
 
 .gate-pw {
@@ -211,12 +227,12 @@ html.is-gate #root {
   align-items: center;
   border: 1px solid transparent;
   border-radius: 12px;
-  background: #f4f5f7;
+  background: #0b1622;
 }
 
 .gate-pw:focus-within {
-  border-color: rgba(12, 34, 56, 0.22);
-  background: #fff;
+  border-color: rgba(238, 242, 246, 0.22);
+  background: #0f1c2a;
 }
 
 .gate-pw input {
@@ -232,7 +248,7 @@ html.is-gate #root {
   place-items: center;
   width: 46px;
   height: 54px;
-  color: #8b90a0;
+  color: #9aa4b0;
 }
 
 .gate-check {
@@ -241,39 +257,39 @@ html.is-gate #root {
   gap: 10px;
   margin-top: 0.2rem;
   font-size: 14px;
-  color: #5c6570;
+  color: #9aa4b0;
 }
 
 .gate-check input {
   width: 16px;
   height: 16px;
-  accent-color: #0c2238;
+  accent-color: #eef2f6;
 }
 
 .gate-go {
   margin-top: 0.4rem;
   min-height: 54px;
   border-radius: 12px;
-  background: #0c2238;
-  color: #fff;
+  background: #eef2f6;
+  color: #0b1622;
   font-size: 15px;
   font-weight: 600;
 }
 
 .gate-go:hover {
-  background: #16324c;
+  background: #fff;
 }
 
 .gate-err {
   margin: 0;
-  color: #be123c;
+  color: #fb7185;
   font-size: 14px;
 }
 
 .gate-hint {
   max-width: 42ch;
   margin: 2.2rem 0 0;
-  color: #8b90a0;
+  color: #7b8594;
   font-size: 13px;
   line-height: 1.55;
 }
@@ -281,6 +297,7 @@ html.is-gate #root {
 .gate-hint code {
   font-family: var(--mono);
   font-size: 12px;
+  color: #c5ccd4;
 }
 
 .gate-media {
@@ -301,14 +318,98 @@ html.is-gate #root {
 .gate-mark {
   position: absolute;
   top: 50%;
-  left: 50%;
-  width: min(58%, 22rem);
+  right: -14%;
+  left: auto;
+  width: min(108vh, 128%);
   height: auto;
-  transform: translate(-50%, -50%);
+  transform: translateY(-50%);
   pointer-events: none;
   user-select: none;
-  opacity: 0.22;
+  opacity: 0.2;
   filter: brightness(0) invert(1);
+}
+
+html[data-theme='light'].is-gate,
+html[data-theme='light'].is-gate body,
+html[data-theme='light'].is-gate #root {
+  background: #f4f1ec;
+  color: #0c2238;
+}
+
+html[data-theme='light'] .gate {
+  color: #0c2238;
+}
+
+html[data-theme='light'] .gate-card {
+  background: #fff;
+  box-shadow: 0 18px 60px rgba(12, 34, 56, 0.08);
+}
+
+html[data-theme='light'] .gate-brand img {
+  filter: none;
+  opacity: 1;
+}
+
+html[data-theme='light'] .gate-lead {
+  color: #6a7380;
+}
+
+html[data-theme='light'] .gate-field {
+  color: #3c4654;
+}
+
+html[data-theme='light'] .gate-field input,
+html[data-theme='light'] .gate-pw input {
+  background: #f4f5f7;
+  color: #0c2238;
+}
+
+html[data-theme='light'] .gate-field input::placeholder,
+html[data-theme='light'] .gate-pw input::placeholder {
+  color: #8b90a0;
+}
+
+html[data-theme='light'] .gate-field > input:focus,
+html[data-theme='light'] .gate-pw:focus-within {
+  border-color: rgba(12, 34, 56, 0.22);
+  background: #fff;
+}
+
+html[data-theme='light'] .gate-pw {
+  background: #f4f5f7;
+}
+
+html[data-theme='light'] .gate-eye {
+  color: #8b90a0;
+}
+
+html[data-theme='light'] .gate-check {
+  color: #5c6570;
+}
+
+html[data-theme='light'] .gate-check input {
+  accent-color: #0c2238;
+}
+
+html[data-theme='light'] .gate-go {
+  background: #0c2238;
+  color: #fff;
+}
+
+html[data-theme='light'] .gate-go:hover {
+  background: #16324c;
+}
+
+html[data-theme='light'] .gate-err {
+  color: #be123c;
+}
+
+html[data-theme='light'] .gate-hint {
+  color: #8b90a0;
+}
+
+html[data-theme='light'] .gate-hint code {
+  color: inherit;
 }
 
 .eyebrow {
@@ -3308,6 +3409,10 @@ html[data-theme='dark'] .cal-day.on { color: #09090b; }
     border-radius: 0;
   }
   .gate-media { min-height: 34vh; grid-row: 1; }
+  .gate-mark {
+    right: -18%;
+    width: min(78vh, 140%);
+  }
   .gate-form {
     grid-row: 2;
     justify-content: flex-start;

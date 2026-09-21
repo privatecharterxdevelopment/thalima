@@ -136,7 +136,7 @@ export function Boat() {
               className={shot.span ? `lp-bento-${shot.span}` : undefined}
               onClick={() => setOpen(i + 1)}
             >
-              <img src={shot.src} alt={shot.alt} />
+              <img src={shot.src} alt={shot.alt} loading="lazy" decoding="async" />
               <span>{shot.caption}</span>
             </button>
           ))}

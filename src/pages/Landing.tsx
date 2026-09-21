@@ -59,8 +59,8 @@ export function Landing() {
       </section>
 
       <section className="lp-cut" aria-hidden="true">
-        <img src="/yacht/sail-aerial-lagoon.jpg" alt="" />
-        <img src="/yacht/hero-sailing.jpg" alt="" />
+        <img src="/yacht/sail-aerial-lagoon.jpg" alt="" loading="lazy" decoding="async" />
+        <img src="/yacht/hero-sailing.jpg" alt="" loading="lazy" decoding="async" />
       </section>
 
       <section className="lp-services">
@@ -68,7 +68,7 @@ export function Landing() {
         <h2>{t.servicesTitle}</h2>
 
         <article className="lp-svc">
-          <img src="/yacht/cockpit-sunpads.jpg" alt="Guests on the sunpads" />
+          <img src="/yacht/cockpit-sunpads.jpg" alt="Guests on the sunpads" loading="lazy" decoding="async" />
           <div>
             <h3>{t.svc1Title}</h3>
             <p>{t.svc1Body}</p>
@@ -79,7 +79,7 @@ export function Landing() {
         </article>
 
         <article className="lp-svc lp-svc-flip">
-          <img src="/yacht/cockpit-night.jpg" alt="Evening in the cockpit" />
+          <img src="/yacht/cockpit-night.jpg" alt="Evening in the cockpit" loading="lazy" decoding="async" />
           <div>
             <h3>{t.svc2Title}</h3>
             <p>{t.svc2Body}</p>
@@ -90,7 +90,7 @@ export function Landing() {
         </article>
 
         <article className="lp-svc">
-          <img src="/yacht/saloon.jpg" alt="Saloon after the 2024 refit" />
+          <img src="/yacht/saloon.jpg" alt="Saloon after the 2024 refit" loading="lazy" decoding="async" />
           <div>
             <h3>{t.svc3Title}</h3>
             <p>{t.svc3Body}</p>
@@ -103,7 +103,7 @@ export function Landing() {
 
       <section className="lp-dark">
         <div className="lp-banner">
-          <img src="/yacht/sail-overhead.jpg" alt="Thalima under sail" />
+          <img src="/yacht/sail-overhead.jpg" alt="Thalima under sail" loading="lazy" decoding="async" />
           <h2>{t.banner}</h2>
         </div>
 
@@ -129,7 +129,7 @@ export function Landing() {
 
           <div className="lp-cards">
             <Link className="lp-card" to="/boat">
-              <img src="/yacht/owner-cabin.jpg" alt={t.ownerSuite} />
+              <img src="/yacht/owner-cabin.jpg" alt={t.ownerSuite} loading="lazy" decoding="async" />
               <div>
                 <span>{t.ownerSuite}</span>
                 <b>{t.ownerSuiteB}</b>
@@ -137,7 +137,7 @@ export function Landing() {
               </div>
             </Link>
             <Link className="lp-card lp-card-tall" to="/charter">
-              <img src="/yacht/hero-sailing.jpg" alt={t.underSail} />
+              <img src="/yacht/hero-sailing.jpg" alt={t.underSail} loading="lazy" decoding="async" />
               <div>
                 <span>{t.underSail}</span>
                 <b>{t.underSailB}</b>
@@ -145,7 +145,7 @@ export function Landing() {
               </div>
             </Link>
             <Link className="lp-card" to="/boat">
-              <img src="/yacht/cockpit-night.jpg" alt={t.evening} />
+              <img src="/yacht/cockpit-night.jpg" alt={t.evening} loading="lazy" decoding="async" />
               <div>
                 <span>{t.evening}</span>
                 <b>{t.eveningB}</b>
@@ -153,7 +153,7 @@ export function Landing() {
               </div>
             </Link>
             <Link className="lp-card" to="/brochure">
-              <img src="/yacht/lounge.jpg" alt={t.lounge} />
+              <img src="/yacht/lounge.jpg" alt={t.lounge} loading="lazy" decoding="async" />
               <div>
                 <span>{t.lounge}</span>
                 <b>{t.loungeB}</b>
@@ -161,7 +161,7 @@ export function Landing() {
               </div>
             </Link>
             <Link className="lp-card" to="/specs">
-              <img src="/yacht/saloon.jpg" alt={t.saloon} />
+              <img src="/yacht/saloon.jpg" alt={t.saloon} loading="lazy" decoding="async" />
               <div>
                 <span>{t.saloon}</span>
                 <b>{t.saloonB}</b>
@@ -182,19 +182,19 @@ export function Landing() {
         </div>
         <div className="lp-posts">
           <Link to="/brochure">
-            <img src="/yacht/sail-aerial-lagoon.jpg" alt="" />
+            <img src="/yacht/sail-aerial-lagoon.jpg" alt="" loading="lazy" decoding="async" />
             <span>{t.postBrochure}</span>
             <h3>{t.postBrochureTitle}</h3>
             <em>{t.readMore}</em>
           </Link>
           <Link to="/specs">
-            <img src="/yacht/sail-beam.jpg" alt="" />
+            <img src="/yacht/sail-beam.jpg" alt="" loading="lazy" decoding="async" />
             <span>{t.postSpec}</span>
             <h3>{t.postSpecTitle}</h3>
             <em>{t.readMore}</em>
           </Link>
           <Link to="/charter">
-            <img src="/yacht/cockpit-sunpads.jpg" alt="" />
+            <img src="/yacht/cockpit-sunpads.jpg" alt="" loading="lazy" decoding="async" />
             <span>{t.charter}</span>
             <h3>{t.postCharterTitle}</h3>
             <em>{t.writeToUs}</em>

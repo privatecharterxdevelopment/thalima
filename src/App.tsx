@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom'
+import { useLayoutEffect, type ReactNode } from 'react'
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
 import { UiProvider } from './ui'
 import { StoreProvider, useStore } from './store'
 import { Shell } from './components/Shell'
@@ -36,9 +36,32 @@ function Gate({ children }: { children: ReactNode }) {
   return children
 }
 
+function ScrollTop() {
+  const { pathname, hash } = useLocation()
+  useLayoutEffect(() => {
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual'
+    if (hash) {
+      const id = hash.slice(1)
+      requestAnimationFrame(() => {
+        document.getElementById(id)?.scrollIntoView()
+      })
+      return
+    }
+    const html = document.documentElement
+    const prev = html.style.scrollBehavior
+    html.style.scrollBehavior = 'auto'
+    window.scrollTo(0, 0)
+    html.scrollTop = 0
+    document.body.scrollTop = 0
+    html.style.scrollBehavior = prev
+  }, [pathname, hash])
+  return null
+}
+
 function Public() {
   return (
     <SiteProvider>
+      <ScrollTop />
       <Outlet />
     </SiteProvider>
   )

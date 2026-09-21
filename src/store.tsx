@@ -38,6 +38,7 @@ import type {
 } from './types'
 import { punchStatus, taskAssignees, tasksSeenKey, uid } from './lib/format'
 import { noticeSeenKey } from './lib/notices'
+import { applyHtmlTheme, readNight, writeTheme } from './lib/siteCopy'
 
 const KEY = 'thalima.crew.v1'
 const SESSION = 'thalima.seat'
@@ -146,6 +147,8 @@ function load(): AppSnapshot {
   } catch {
     base.userId = null
   }
+  base.theme = readNight() ? 'dark' : 'light'
+  applyHtmlTheme(base.theme)
   return base
 }
 
@@ -235,11 +238,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    document.documentElement.dataset.theme = snap.theme
-    document.documentElement.style.colorScheme = snap.theme
+    applyHtmlTheme(snap.theme)
+    writeTheme(snap.theme)
     document.querySelector('meta[name="theme-color"]')?.setAttribute(
       'content',
-      snap.theme === 'dark' ? '#0c0e13' : '#f3f4f7',
+      snap.theme === 'dark' ? '#0b1622' : '#f3f4f7',
     )
   }, [snap.theme])
 
@@ -293,6 +296,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setTheme = useCallback((theme: 'light' | 'dark') => {
+    writeTheme(theme)
+    applyHtmlTheme(theme)
     setSnap((s) => ({ ...s, theme }))
   }, [])
 

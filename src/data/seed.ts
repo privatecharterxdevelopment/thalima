@@ -440,7 +440,7 @@ export function seed(): AppSnapshot {
 
   return {
     userId: null,
-    theme: 'light',
+    theme: 'dark',
     tasks,
     messages,
     log,
