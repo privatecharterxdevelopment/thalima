@@ -3,7 +3,7 @@ import { useStore } from '../store'
 import { Avatar } from '../components/Avatar'
 
 const bill = [
-  { time: '00–04', who: 'luca', note: 'Anchor. Transits every 15 min. Call Eddy if she walks.' },
+  { time: '00–04', who: 'luca', note: 'Anchor. Transits every 15 min. Call Max if she walks.' },
   { time: '04–08', who: 'eddy', note: 'Anchor + dawn. Engine room walk with coffee.' },
   { time: '08–12', who: 'sofia', note: 'Cabins after breakfast. Luca on deck wash after guests aft.' },
   { time: '12–16', who: 'marco', note: 'Plant. Watermaker if we run. Hydraulic mark.' },
@@ -24,17 +24,7 @@ export function Watch() {
   }
 
   return (
-    <>
-      <div className="page-head">
-        <div>
-          <p className="eyebrow">At anchor · Marinella</p>
-          <h1>Watch</h1>
-          <p>
-            Five souls, no extra dayworker. Anchor watches are real. Interior and galley keep guest hours
-            rather than a sea rota.
-          </p>
-        </div>
-      </div>
+    <div className="pad">
       <div className="watch">
         {bill.map((row) => {
           const who = crew.find((c) => c.id === row.who)
@@ -54,11 +44,37 @@ export function Watch() {
             </article>
           )
         })}
-        <p style={{ color: 'var(--muted)', marginTop: '1rem', maxWidth: '48ch', lineHeight: 1.65 }}>
-          Julien is day-working the galley. Sofia covers interior through turndown, then on call. Marco
-          sleeps in the engineer cabin unless the weep grows.
-        </p>
       </div>
-    </>
+      <table className="table" style={{ marginTop: 8 }}>
+        <thead>
+          <tr>
+            <th>Crew</th>
+            <th>Work</th>
+            <th>Rest</th>
+            <th>MLC</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            { id: 'eddy', work: '11 h 20', rest: '12 h 40', ok: true },
+            { id: 'marco', work: '9 h 00', rest: '15 h 00', ok: true },
+            { id: 'sofia', work: '12 h 30', rest: '11 h 30', ok: true },
+            { id: 'julien', work: '12 h 00', rest: '12 h 00', ok: true },
+            { id: 'luca', work: '10 h 45', rest: '13 h 15', ok: true },
+          ].map((r) => {
+            const who = crew.find((c) => c.id === r.id)
+            if (!who) return null
+            return (
+              <tr key={r.id}>
+                <td>{who.name}</td>
+                <td>{r.work}</td>
+                <td>{r.rest}</td>
+                <td>{r.ok ? 'Clear' : 'Short'}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }

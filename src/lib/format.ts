@@ -81,20 +81,52 @@ export function sortTasks(a: Task, b: Task) {
   return new Date(a.due).getTime() - new Date(b.due).getTime()
 }
 
-export function canAssign(user: CrewMember, department: Department) {
-  if (user.level === 1) return true
-  if (user.level === 2) return user.department === department
-  return false
+export function taskAssignees(task: { assigneeId: string; assigneeIds?: string[] }) {
+  const ids = task.assigneeIds?.length ? task.assigneeIds : task.assigneeId ? [task.assigneeId] : []
+  return [...new Set(ids)]
+}
+
+export function canAssign(user: CrewMember, _department: Department) {
+  return user.level <= 2
 }
 
 export function canSeeTask(user: CrewMember, task: Task) {
+  const assigned = taskAssignees(task).includes(user.id)
   if (user.level === 1) return true
-  if (user.level === 2) return task.department === user.department || task.assigneeId === user.id
-  return task.assigneeId === user.id || task.createdBy === user.id
+  if (user.level === 2) {
+    return task.department === user.department || assigned || task.createdBy === user.id
+  }
+  return assigned || task.createdBy === user.id
 }
 
 export function canMoveTask(user: CrewMember, task: Task) {
+  const assigned = taskAssignees(task).includes(user.id)
   if (user.level === 1) return true
-  if (user.level === 2) return task.department === user.department || task.assigneeId === user.id
-  return task.assigneeId === user.id
+  if (user.level === 2) {
+    return task.department === user.department || assigned || task.createdBy === user.id
+  }
+  return assigned
+}
+
+export function tasksSeenKey(userId: string) {
+  return `tasks:${userId}`
+}
+
+export function isFreshTask(task: Task, userId: string, lastRead: Record<string, string>) {
+  if (task.createdBy === userId || task.status === 'done') return false
+  const seen = lastRead[tasksSeenKey(userId)] ?? new Date(Date.now() - 3 * 3600_000).toISOString()
+  return task.createdAt > seen
+}
+
+export function helloParts(name: string) {
+  const h = Number(
+    new Date().toLocaleString('en-GB', { hour: '2-digit', hour12: false, timeZone: 'Europe/Rome' }),
+  )
+  const greet = h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'
+  return { greet, name }
+}
+
+export function hello(name: string) {
+  const { greet, name: who } = helloParts(name)
+  return `${greet}, ${who}`
 }

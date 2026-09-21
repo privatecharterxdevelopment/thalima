@@ -6,7 +6,7 @@ export function ThemeToggle() {
   const next = theme === 'light' ? 'dark' : 'light'
   return (
     <button
-      className="theme-btn"
+      className="ghost-icon"
       onClick={() => setTheme(next)}
       aria-label={next === 'dark' ? 'Switch to night watch' : 'Switch to day'}
       title={next === 'dark' ? 'Night' : 'Day'}

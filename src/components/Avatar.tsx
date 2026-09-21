@@ -13,7 +13,7 @@ export function Avatar({
   size = 'md',
 }: {
   person: CrewMember
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }) {
   return (
     <span
@@ -21,7 +21,7 @@ export function Avatar({
       style={{ background: hues[person.id] ?? '#1f4a5c' }}
       title={person.name}
     >
-      {person.initials}
+      {person.photo ? <img src={person.photo} alt="" /> : person.initials}
     </span>
   )
 }

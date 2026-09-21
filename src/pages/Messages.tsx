@@ -38,14 +38,7 @@ export function Messages() {
   }
 
   return (
-    <>
-      <div className="page-head">
-        <div>
-          <p className="eyebrow">Internal</p>
-          <h1>Messages</h1>
-          <p>Houses, all-crew, and private lines. Captain sees every department channel.</p>
-        </div>
-      </div>
+    <div className="pad chat-wrap">
       <div className="chat">
         <aside className="ch-list">
           {visible.map((ch) => {
@@ -125,6 +118,6 @@ export function Messages() {
           </form>
         </section>
       </div>
-    </>
+    </div>
   )
 }

@@ -1,9 +1,22 @@
-export type Role = 'captain' | 'engineer' | 'stewardess' | 'chef' | 'deck'
+export type Role =
+  | 'captain'
+  | 'first_officer'
+  | 'bosun'
+  | 'deckhand'
+  | 'engineer'
+  | 'second_engineer'
+  | 'eto'
+  | 'purser'
+  | 'stewardess'
+  | 'second_stew'
+  | 'chef'
+  | 'sous'
 export type Level = 1 | 2 | 3
 export type Department = 'bridge' | 'engineering' | 'interior' | 'galley' | 'deck'
 export type Urgency = 'routine' | 'soon' | 'now' | 'emergency'
 export type TaskStatus = 'backlog' | 'ready' | 'doing' | 'waiting' | 'done'
 export type ChannelKind = 'all' | 'department' | 'dm'
+export type CalRole = 'captain' | 'engineer' | 'stewardess' | 'chef' | 'bosun'
 
 export type CrewMember = {
   id: string
@@ -15,6 +28,23 @@ export type CrewMember = {
   initials: string
   watch: string
   online: boolean
+  email: string
+  phone: string
+  photo: string
+}
+
+export type AttachedFile = {
+  id: string
+  name: string
+  type: string
+  size: number
+  dataUrl: string
+}
+
+export type CloudDoc = AttachedFile & {
+  title: string
+  createdBy: string
+  createdAt: string
 }
 
 export type Task = {
@@ -25,9 +55,12 @@ export type Task = {
   urgency: Urgency
   department: Department
   assigneeId: string
+  assigneeIds?: string[]
+  files?: AttachedFile[]
   createdBy: string
   due: string
   createdAt: string
+  completedAt?: string
 }
 
 export type Channel = {
@@ -53,6 +86,16 @@ export type LogEntry = {
   text: string
 }
 
+export type CalEvent = {
+  id: string
+  title: string
+  body: string
+  role: CalRole
+  start: string
+  end: string
+  createdBy: string
+}
+
 export type GuestCabin = {
   id: string
   name: string
@@ -75,6 +118,13 @@ export type Systems = {
   hydraulics: 'ok' | 'watch'
 }
 
+export type WeatherHour = {
+  at: string
+  windKn: number
+  gustKn: number
+  waveM: number | null
+}
+
 export type WeatherNow = {
   tempC: number
   windKn: number
@@ -85,7 +135,10 @@ export type WeatherNow = {
   waveM: number | null
   waveDir: number | null
   wavePeriod: number | null
+  swellM: number | null
+  swellPeriod: number | null
   sst: number | null
+  hourly: WeatherHour[]
   fetchedAt: string
 }
 
@@ -95,7 +148,9 @@ export type AppSnapshot = {
   tasks: Task[]
   messages: ChatMessage[]
   log: LogEntry[]
+  events: CalEvent[]
   systems: Systems
   lastRead: Record<string, string>
   weather: WeatherNow | null
+  docs: CloudDoc[]
 }

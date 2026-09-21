@@ -1,8 +1,15 @@
 import { crew, systemsSeed } from './crew'
-import type { AppSnapshot, ChatMessage, LogEntry, Task } from '../types'
+import type { AppSnapshot, CalEvent, ChatMessage, CloudDoc, LogEntry, Task } from '../types'
 
 function iso(hoursFromNow: number) {
   return new Date(Date.now() + hoursFromNow * 3600_000).toISOString()
+}
+
+function todayAt(hour: number, minute = 0, dayOffset = 0) {
+  const d = new Date()
+  d.setDate(d.getDate() + dayOffset)
+  d.setHours(hour, minute, 0, 0)
+  return d.toISOString()
 }
 
 function at(hoursAgo: number) {
@@ -26,7 +33,7 @@ export function seed(): AppSnapshot {
     {
       id: 't2',
       title: 'Anchor watch until 20:00',
-      body: 'Five shackles on deck, Marinella sand. Check transits every 15 min. Wind still SSW 2–4. Call Eddy if we walk more than half a boat.',
+      body: 'Five shackles on deck, Marinella sand. Check transits every 15 min. Wind still SSW 2–4. Call Max if we walk more than half a boat.',
       status: 'doing',
       urgency: 'now',
       department: 'deck',
@@ -81,7 +88,7 @@ export function seed(): AppSnapshot {
       assigneeId: 'sofia',
       createdBy: 'sofia',
       due: iso(2.5),
-      createdAt: at(1),
+      createdAt: at(0.18),
     },
     {
       id: 't7',
@@ -110,7 +117,7 @@ export function seed(): AppSnapshot {
     {
       id: 't9',
       title: 'Provision list · Bonifacio window',
-      body: 'If the Mistral stays light Sunday, Eddy wants a Corsica hop. Need: mineral water 48, citrus, ice, kids’ yoghurt alternative, diesel only if impeller spare is here.',
+      body: 'If the Mistral stays light Sunday, Max wants a Corsica hop. Need: mineral water 48, citrus, ice, kids’ yoghurt alternative, diesel only if impeller spare is here.',
       status: 'backlog',
       urgency: 'routine',
       department: 'galley',
@@ -154,6 +161,30 @@ export function seed(): AppSnapshot {
       createdBy: 'eddy',
       due: iso(12),
       createdAt: at(0.5),
+    },
+    {
+      id: 't13',
+      title: 'Fenders on passerelle before splash',
+      body: 'Two extra fenders and the step mat before Luca launches at 18:30. Guests may come down early.',
+      status: 'ready',
+      urgency: 'now',
+      department: 'deck',
+      assigneeId: 'luca',
+      createdBy: 'eddy',
+      due: iso(0.5),
+      createdAt: at(0.08),
+    },
+    {
+      id: 't14',
+      title: 'Owner asked for an earlier tender',
+      body: 'Adler wants to go ashore at 17:45, not 18:30. Sofia already told the galley. Need Max’s call on the launch.',
+      status: 'ready',
+      urgency: 'now',
+      department: 'bridge',
+      assigneeId: 'eddy',
+      createdBy: 'sofia',
+      due: iso(0.2),
+      createdAt: at(0.05),
     },
   ]
 
@@ -292,12 +323,118 @@ export function seed(): AppSnapshot {
     },
   ]
 
+  const events: CalEvent[] = [
+    {
+      id: 'c1',
+      title: 'Morning brief',
+      body: 'All heads. Weather, guest plan, fuel/water, tender.',
+      role: 'captain',
+      start: todayAt(7, 45),
+      end: todayAt(8, 0),
+      createdBy: 'eddy',
+    },
+    {
+      id: 'c2',
+      title: 'Launch tender · Porto Rotondo',
+      body: 'Williams for four. Radios, fenders, wine caddy. Back before dark.',
+      role: 'bosun',
+      start: todayAt(18, 30),
+      end: todayAt(20, 15),
+      createdBy: 'eddy',
+    },
+    {
+      id: 'c3',
+      title: 'Dinner on deck',
+      body: 'Dentex 20:30. Kids pasta 19:30. No shellfish on the pass.',
+      role: 'chef',
+      start: todayAt(20, 30),
+      end: todayAt(22, 0),
+      createdBy: 'eddy',
+    },
+    {
+      id: 'c4',
+      title: 'Turndown · owner & VIP',
+      body: 'Adler 21:30, Vogel 21:45. Extra throw on Clara.',
+      role: 'stewardess',
+      start: todayAt(21, 30),
+      end: todayAt(22, 0),
+      createdBy: 'sofia',
+    },
+    {
+      id: 'c5',
+      title: 'Hydraulic mark',
+      body: 'Boom-vang manifold. Level at 08:00. Call Max if it drops.',
+      role: 'engineer',
+      start: todayAt(16, 0),
+      end: todayAt(16, 30),
+      createdBy: 'marco',
+    },
+    {
+      id: 'c6',
+      title: 'Anchor watch 16–20',
+      body: 'Transits every 15 min. Call Max if she walks.',
+      role: 'bosun',
+      start: todayAt(16, 0),
+      end: todayAt(20, 0),
+      createdBy: 'eddy',
+    },
+    {
+      id: 'c7',
+      title: 'Watermaker run',
+      body: 'If filters are in. Log hours after.',
+      role: 'engineer',
+      start: todayAt(9, 0, 1),
+      end: todayAt(11, 0, 1),
+      createdBy: 'eddy',
+    },
+  ]
+
+  const textDoc = (id: string, title: string, body: string, hoursAgo: number): CloudDoc => ({
+    id,
+    title,
+    name: `${title}.txt`,
+    type: 'text/plain',
+    size: body.length,
+    dataUrl: `data:text/plain;charset=utf-8,${encodeURIComponent(body)}`,
+    createdBy: 'eddy',
+    createdAt: at(hoursAgo),
+  })
+
+  const docs: CloudDoc[] = [
+    textDoc(
+      'd1',
+      'Night orders',
+      'At anchor Golfo di Marinella. Five shackles. Transits every 15 min. Call me if she walks more than half a boat or wind goes over 15 kn. Tender recovered. No swimming after dark.\n\nMax',
+      10,
+    ),
+    textDoc(
+      'd2',
+      'Guest briefing — Adler',
+      'Soft wake 08:00. Clara: no shellfish anywhere. Nina: no dairy at breakfast. Espresso 07:15 on deck if fair. Tender 18:30 Porto Rotondo. Turndown 21:30 owner, 21:45 VIP.',
+      26,
+    ),
+    textDoc(
+      'd3',
+      'SMS — hydraulic watch',
+      'Boom-vang manifold weep since 2024 pump swap. Level marked 08:00. If it drops 10 mm, isolate. No passage under power until two Cummins impellers are onboard.',
+      30,
+    ),
+    textDoc(
+      'd4',
+      'Tender standing orders',
+      'Williams Sportjet 435. Radios, fenders, guest towels, wine caddy from interior. Back before dark. Bosun drives; stew rides if guests aboard.',
+      48,
+    ),
+  ]
+
   return {
     userId: null,
     theme: 'light',
     tasks,
     messages,
     log,
+    events,
+    docs,
     systems: { ...systemsSeed },
     lastRead: Object.fromEntries(crew.map((c) => [`${c.id}:all`, at(0.05)])),
     weather: null,

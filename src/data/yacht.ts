@@ -49,3 +49,16 @@ export const nearby = [
   { name: 'Golfo Aranci', lat: 40.995, lon: 9.615, kind: 'port' },
   { name: 'Porto Cervo', lat: 41.137, lon: 9.535, kind: 'marina' },
 ] as const
+
+export const docks = [
+  { name: 'Thalima · here', lat: position.lat, lon: position.lon },
+  { name: 'Porto Rotondo', lat: 41.027, lon: 9.543 },
+  { name: 'Porto Cervo marina', lat: 41.137, lon: 9.535 },
+  { name: 'Marina di Portisco', lat: 41.036, lon: 9.526 },
+  { name: 'Golfo Aranci', lat: 40.995, lon: 9.615 },
+  { name: 'Olbia / Isola Bianca', lat: 40.923, lon: 9.503 },
+  { name: 'Cala di Volpe', lat: 41.079, lon: 9.54 },
+  { name: 'Bonifacio', lat: 41.387, lon: 9.159 },
+  { name: 'Porto Vecchio', lat: 41.592, lon: 9.28 },
+  { name: 'La Maddalena', lat: 41.214, lon: 9.408 },
+] as const

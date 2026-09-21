@@ -1,17 +1,24 @@
-import { useState } from 'react'
-import { deptLabel, statusLabel, statusOrder, urgencyLabel } from '../data/crew'
+import { useEffect, useState } from 'react'
+import { deptLabel, urgencyLabel } from '../data/crew'
 import { canMoveTask, canSeeTask, sortTasks } from '../lib/format'
 import { useStore } from '../store'
 import { TaskCard } from '../components/TaskCard'
-import { NewTask } from '../components/NewTask'
 import type { Department, TaskStatus, Urgency } from '../types'
 
+const lanes = [
+  { key: 'pending', label: 'Pending', accept: ['backlog', 'ready', 'doing', 'waiting'] as TaskStatus[], drop: 'ready' as TaskStatus },
+  { key: 'done', label: 'Done', accept: ['done'] as TaskStatus[], drop: 'done' as TaskStatus },
+]
+
 export function Board() {
-  const { user, tasks, moveTask } = useStore()
-  const [open, setOpen] = useState(false)
+  const { user, tasks, moveTask, markTasksSeen } = useStore()
   const [dept, setDept] = useState<Department | 'all'>('all')
   const [urg, setUrg] = useState<Urgency | 'all'>('all')
   const [drag, setDrag] = useState<string | null>(null)
+
+  useEffect(() => {
+    markTasksSeen()
+  }, [markTasksSeen])
 
   if (!user) return null
 
@@ -20,56 +27,43 @@ export function Board() {
     .filter((t) => dept === 'all' || t.department === dept)
     .filter((t) => urg === 'all' || t.urgency === urg)
 
-  const canCreate = user.level <= 2
+  const depts: Array<Department | 'all'> =
+    user.level === 1 ? ['all', 'bridge', 'engineering', 'interior', 'galley', 'deck'] : ['all', user.department]
 
   return (
-    <>
-      <div className="page-head">
-        <div>
-          <p className="eyebrow">Assignment</p>
-          <h1>Board</h1>
-          <p>
-            Drag a card to move it. You only see what your level allows. Time and urgency sit on every
-            job.
-          </p>
-        </div>
-        {canCreate && (
-          <button className="btn" onClick={() => setOpen(true)}>
-            Assign task
-          </button>
-        )}
-      </div>
-
-      <div className="filters" style={{ marginBottom: '1.2rem' }}>
-        {(['all', 'bridge', 'engineering', 'interior', 'galley', 'deck'] as const).map((d) => (
+    <div className="board-modern">
+      <div className="filters">
+        {depts.map((d) => (
           <button key={d} className={dept === d ? 'on' : ''} onClick={() => setDept(d)}>
-            {d === 'all' ? 'All houses' : deptLabel[d]}
+            {d === 'all' ? 'All' : deptLabel[d]}
           </button>
         ))}
         {(['all', 'emergency', 'now', 'soon', 'routine'] as const).map((u) => (
           <button key={u} className={urg === u ? 'on' : ''} onClick={() => setUrg(u)}>
-            {u === 'all' ? 'Any urgency' : urgencyLabel[u]}
+            {u === 'all' ? 'Any' : urgencyLabel[u]}
           </button>
         ))}
       </div>
 
-      <div className="kanban">
-        {statusOrder.map((status) => {
-          const col = visible.filter((t) => t.status === status).sort(sortTasks)
+      <div className="kanban modern">
+        {lanes.map((lane) => {
+          const col = visible.filter((t) => lane.accept.includes(t.status)).sort(sortTasks)
           return (
             <section
-              key={status}
-              className="col"
+              key={lane.key}
+              className={`col ${lane.key === 'pending' ? 'is-wide' : ''}`}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => {
                 if (!drag) return
                 const task = tasks.find((t) => t.id === drag)
-                if (task && canMoveTask(user, task)) moveTask(drag, status as TaskStatus)
+                if (task && canMoveTask(user, task) && !lane.accept.includes(task.status)) {
+                  moveTask(drag, lane.drop)
+                }
                 setDrag(null)
               }}
             >
               <header>
-                <span>{statusLabel[status]}</span>
+                <span>{lane.label}</span>
                 <span>{col.length}</span>
               </header>
               {col.map((t) => (
@@ -84,7 +78,6 @@ export function Board() {
           )
         })}
       </div>
-      {open && <NewTask onClose={() => setOpen(false)} />}
-    </>
+    </div>
   )
 }

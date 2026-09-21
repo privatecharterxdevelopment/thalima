@@ -1,169 +1,174 @@
-import { Link } from 'react-router-dom'
-import { cabins } from '../data/crew'
-import { yacht } from '../data/yacht'
-import { canSeeTask, sortTasks } from '../lib/format'
-import { useStore } from '../store'
-import { TaskCard } from '../components/TaskCard'
-import { MapCanvas } from '../components/MapCanvas'
-import { WindRose } from '../components/WindRose'
+import { useNavigate } from 'react-router-dom'
+import { NavWidget } from '../components/NavWidget'
 import { Avatar } from '../components/Avatar'
-import { crew } from '../data/crew'
-import { beaufort, cardinal, clock } from '../lib/format'
+import { useUi } from '../ui'
+import { useStore } from '../store'
+import { canSeeTask, clock, taskAssignees } from '../lib/format'
+import { eventsOnDay, sameDay } from '../lib/cal'
+import { crew, deptLabel, inventory, statusLabel } from '../data/crew'
 
-export function Bridge() {
-  const { user, tasks, messages, systems, weather } = useStore()
-  if (!user) return null
-
-  const live = tasks.filter((t) => canSeeTask(user, t) && t.status !== 'done' && t.status !== 'backlog').sort(sortTasks)
-  const latest = [...messages].filter((m) => m.channelId === 'all').reverse().slice(0, 4)
-  const guests = cabins.reduce((n, c) => n + c.guests.length, 0)
-  const b = weather ? beaufort(weather.windKn) : null
-
-  return (
-    <>
-      <div className="page-head">
-        <div>
-          <p className="eyebrow">Mother board</p>
-          <h1>On watch</h1>
-          <p>
-            Charter day 5 of 7. Six guests in three cabins. We stay in Marinella unless engineering clears
-            a hop.
-          </p>
-        </div>
-        <Link className="btn" to="/board">
-          Open the board
-        </Link>
-      </div>
-
-      <div className="stats">
-        <div className="stat">
-          <span>Open jobs you can see</span>
-          <b>{live.length}</b>
-        </div>
-        <div className="stat">
-          <span>Guests / crew</span>
-          <b>
-            {guests} / {yacht.crew}
-          </b>
-        </div>
-        <div className="stat">
-          <span>Fuel · water</span>
-          <b>
-            {systems.fuelPct}% · {systems.waterPct}%
-          </b>
-        </div>
-      </div>
-
-      <div className="board-grid">
-        <section className="panel">
-          <h2>Live work · text, time, urgency</h2>
-          <div className="mother">
-            {live.map((t) => (
-              <TaskCard key={t.id} task={t} />
-            ))}
-          </div>
-        </section>
-
-        <div className="side-stack">
-          <section className="panel">
-            <h2>Wind & sea</h2>
-            <div style={{ display: 'flex', gap: '1.2rem', alignItems: 'center' }}>
-              <WindRose weather={weather} />
-              <div>
-                {weather ? (
-                  <>
-                    <p style={{ fontFamily: 'var(--mono)', fontSize: '1.05rem' }}>
-                      {weather.windKn.toFixed(1)} kn {cardinal(weather.windDir)}
-                      <br />
-                      gust {weather.gustKn.toFixed(0)} kn
-                    </p>
-                    <p style={{ color: 'var(--muted)', marginTop: 8, fontSize: '0.92rem' }}>
-                      {b ? `Beaufort ${b.f} · ${b.name}` : ''}
-                      <br />
-                      {weather.tempC.toFixed(0)}°C air
-                      {weather.sst != null ? ` · ${weather.sst.toFixed(1)}°C sea` : ''}
-                      <br />
-                      {weather.waveM != null
-                        ? `waves ${weather.waveM.toFixed(1)} m / ${weather.wavePeriod?.toFixed(0)} s`
-                        : 'sea state from GFS'}
-                      <br />
-                      {weather.pressure.toFixed(0)} hPa · cloud {weather.cloud}%
-                    </p>
-                  </>
-                ) : (
-                  <p style={{ color: 'var(--muted)' }}>Fetching Open-Meteo…</p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className="panel">
-            <h2>Hotel load</h2>
-            <div className="systems">
-              <Meter label="Fuel" pct={systems.fuelPct} note={`${Math.round((systems.fuelPct / 100) * yacht.fuelL)} L`} />
-              <Meter label="Fresh water" pct={systems.waterPct} note={`${Math.round((systems.waterPct / 100) * yacht.waterL)} L`} />
-              <Meter label="Grey" pct={systems.greyPct} />
-              <Meter label="Black" pct={systems.blackPct} alert={systems.blackPct > 70} />
-              <p style={{ color: 'var(--muted)', fontSize: '0.88rem' }}>
-                House bank {systems.batteryV.toFixed(1)} V · Cummins {systems.engineHours} h · hydraulics{' '}
-                {systems.hydraulics === 'watch' ? 'on watch' : 'ok'}
-              </p>
-            </div>
-          </section>
-
-          <section className="panel">
-            <h2>Where she lies</h2>
-            <MapCanvas heightClass="map-mini" />
-          </section>
-
-          <section className="panel">
-            <h2>Last from the crew</h2>
-            <div className="msg-snip">
-              {latest.map((m) => {
-                const who = crew.find((c) => c.id === m.authorId)
-                if (!who) return null
-                return (
-                  <article key={m.id}>
-                    <Avatar person={who} size="sm" />
-                    <div>
-                      <small>
-                        {who.name} · {clock(m.at)}
-                      </small>
-                      <p>{m.text}</p>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
-          </section>
-        </div>
-      </div>
-    </>
-  )
+function weekDays() {
+  const now = new Date()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+  monday.setHours(12, 0, 0, 0)
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    return d
+  })
 }
 
-function Meter({
-  label,
-  pct,
-  note,
-  alert,
-}: {
-  label: string
-  pct: number
-  note?: string
-  alert?: boolean
-}) {
+export function Bridge() {
+  const { user, tasks, events, systems } = useStore()
+  const { navFull, openTask } = useUi()
+  const nav = useNavigate()
+  if (!user) return null
+
+  if (navFull) {
+    return (
+      <div className="oveo">
+        <NavWidget variant="page" />
+      </div>
+    )
+  }
+
+  const assigned = tasks
+    .filter((t) => canSeeTask(user, t) && t.status !== 'done' && taskAssignees(t).length > 0)
+    .sort((a, b) => new Date(a.due).getTime() - new Date(b.due).getTime())
+  const live =
+    assigned.filter((t) => t.status === 'doing').sort((a, b) => new Date(a.due).getTime() - new Date(b.due).getTime())[0] ??
+    assigned[0]
+  const people = live
+    ? taskAssignees(live)
+        .map((id) => crew.find((c) => c.id === id))
+        .filter(Boolean)
+    : []
+  const days = weekDays()
+  const today = new Date()
+  const upcomingEvent = [...events]
+    .filter((e) => new Date(e.end).getTime() >= Date.now())
+    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0]
+  const overdueN = assigned.filter((t) => new Date(t.due).getTime() < Date.now()).length
+  const waitingN = assigned.filter((t) => t.status === 'waiting').length
+  const lowN = inventory.filter((i) => i.stock < i.min).length
+  const hydroWatch = systems.hydraulics === 'watch'
+
   return (
-    <div className={`meter ${alert ? 'alert' : ''}`}>
-      <span>
-        {label}
-        <b>
-          {pct}%{note ? ` · ${note}` : ''}
-        </b>
-      </span>
-      <i>
-        <em style={{ width: `${pct}%` }} />
-      </i>
+    <div className="home">
+      <div className="home-stage">
+        <section className="home-nav">
+          <NavWidget variant="window" />
+        </section>
+
+        <button
+          className="glass-card apple-widget home-live"
+          type="button"
+          onClick={() => (live ? openTask(live.id) : nav('/board'))}
+        >
+          <div className="apple-kicker">
+            <span>{live ? statusLabel[live.status] : 'Now'}</span>
+            {live ? <em>{clock(live.due)}</em> : null}
+          </div>
+          {live ? (
+            <div className="live-body">
+              <h2>{live.title}</h2>
+              <p>{live.body}</p>
+              <small>
+                {deptLabel[live.department]}
+                {new Date(live.due).getTime() < Date.now() ? ' · Overdue' : ''}
+              </small>
+              <ul className="live-who">
+                {people.map((who) => (
+                  <li key={who!.id}>
+                    <Avatar person={who!} />
+                    <div>
+                      <b>{who!.name}</b>
+                      <span>{who!.title}</span>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="apple-empty">Nothing on the board.</p>
+          )}
+        </button>
+
+        <button className="glass-card apple-widget" type="button" onClick={() => nav('/calendar')}>
+          <div className="apple-kicker">
+            <span>Diary</span>
+          </div>
+          <div className="week-strip">
+            {days.map((d) => {
+              const on = sameDay(d, today)
+              const has = eventsOnDay(events, d).length > 0
+              return (
+                <span key={d.toISOString()} className={`week-day ${on ? 'is-today' : ''} ${has ? 'has-event' : ''}`}>
+                  {d.toLocaleDateString('en-GB', { weekday: 'narrow', timeZone: 'Europe/Rome' })}
+                  <b>{d.getDate()}</b>
+                  {has ? <i /> : <i className="is-blank" />}
+                </span>
+              )
+            })}
+          </div>
+          {upcomingEvent ? (
+            <p className="week-next">
+              <time>{clock(upcomingEvent.start)}</time>
+              {upcomingEvent.title}
+            </p>
+          ) : (
+            <p className="apple-empty">Nothing in the diary.</p>
+          )}
+        </button>
+
+        <button className="glass-card apple-widget" type="button" onClick={() => nav('/board')}>
+          <div className="apple-kicker">
+            <span>Tasks</span>
+            <em>{assigned.length}</em>
+          </div>
+          {assigned.length === 0 ? (
+            <p className="apple-empty">No assigned tasks.</p>
+          ) : (
+            <ul className="apple-tasks">
+              {assigned.map((t) => (
+                <li key={t.id}>
+                  <i className={`apple-ring is-${t.urgency}`} />
+                  <span>{t.title}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </button>
+
+        <section className="glass-card apple-widget apple-alerts">
+          <div className="apple-kicker">
+            <span>Alerts</span>
+          </div>
+          <div className="alert-list">
+            <button type="button" className={`alert-row ${overdueN ? 'is-hot' : ''}`} onClick={() => nav('/board')}>
+              <b>{overdueN}</b>
+              <span>Overdue tasks</span>
+            </button>
+            <button type="button" className={`alert-row ${lowN ? 'is-soon' : ''}`} onClick={() => nav('/inventory')}>
+              <b>{lowN}</b>
+              <span>Below min stock</span>
+            </button>
+            <button type="button" className={`alert-row ${waitingN ? 'is-soon' : ''}`} onClick={() => nav('/board')}>
+              <b>{waitingN}</b>
+              <span>Waiting on parts</span>
+            </button>
+            <button
+              type="button"
+              className={`alert-row ${hydroWatch ? 'is-soon' : ''}`}
+              onClick={() => nav('/board')}
+            >
+              <b>{hydroWatch ? 1 : 0}</b>
+              <span>Plant on watch</span>
+            </button>
+          </div>
+        </section>
+      </div>
     </div>
   )
 }

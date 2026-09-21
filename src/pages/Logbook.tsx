@@ -8,17 +8,10 @@ export function Logbook() {
   const { log, addLog, user } = useStore()
   const [text, setText] = useState('')
   if (!user) return null
-  const canWrite = user.level === 1 || user.role === 'deck' || user.role === 'engineer'
+  const canWrite = user.level === 1 || user.department === 'deck' || user.department === 'engineering'
 
   return (
-    <>
-      <div className="page-head">
-        <div>
-          <p className="eyebrow">Deck log</p>
-          <h1>Log</h1>
-          <p>Official picture of the ship. Captain, deck and engineering write. Others read.</p>
-        </div>
-      </div>
+    <div className="pad">
       {canWrite && (
         <form
           className="log-form"
@@ -58,6 +51,6 @@ export function Logbook() {
           )
         })}
       </div>
-    </>
+    </div>
   )
 }
