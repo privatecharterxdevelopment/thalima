@@ -53,7 +53,7 @@ export function TaskPage() {
   ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
 
   function setStatus(status: TaskStatus) {
-    if (!can || status === task.status) return
+    if (!task || !can || status === task.status) return
     updateTask(task.id, {
       status,
       awaitReason: status === 'waiting' ? (task.awaitReason ?? 'spare') : undefined,
@@ -62,7 +62,7 @@ export function TaskPage() {
 
   function post(e: FormEvent) {
     e.preventDefault()
-    if (!can || !note.trim()) return
+    if (!task || !can || !note.trim()) return
     addTaskNote(task.id, note)
     setNote('')
   }

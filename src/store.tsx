@@ -375,10 +375,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (patch.status && patch.status !== t.status) {
             next = { ...punchStatus(t, patch.status), ...patch, status: patch.status }
             if (patch.assigneeIds?.length) next.assigneeId = patch.assigneeIds[0]
-          } else if (patch.status === 'done') {
-            next.completedAt = new Date().toISOString()
-          } else if (patch.status && patch.status !== 'done') {
-            next.completedAt = undefined
           }
           if (!s.userId) return next
           if (patch.status && patch.status !== t.status) {

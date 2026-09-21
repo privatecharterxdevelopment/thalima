@@ -1,4 +1,4 @@
-import { crew, systemsSeed } from './crew'
+import { systemsSeed } from './crew'
 import { opsSeed } from './ops'
 import type { AppSnapshot, CalEvent, ChatMessage, CloudDoc, LogEntry, Task } from '../types'
 
