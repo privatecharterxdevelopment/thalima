@@ -1,4 +1,4 @@
-import type { CrewMember, Department, Task, Urgency } from '../types'
+import type { CrewMember, Department, Task, TaskStatus, Urgency } from '../types'
 
 export function padCoord(n: number, pos: string, neg: string) {
   const hem = n >= 0 ? pos : neg
@@ -47,6 +47,58 @@ export function dayClock(iso: string) {
   })
 }
 
+export function elapsedClock(ms: number) {
+  const total = Math.max(0, Math.floor(ms / 1000))
+  const d = Math.floor(total / 86400)
+  const h = Math.floor((total % 86400) / 3600)
+  const m = Math.floor((total % 3600) / 60)
+  const s = total % 60
+  if (d > 0) return `${d}d ${h}h ${String(m).padStart(2, '0')}m`
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m ${String(s).padStart(2, '0')}s`
+  if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`
+  return `${s}s`
+}
+
+export function elapsedShort(ms: number) {
+  const m = Math.max(0, Math.floor(ms / 60000))
+  if (m < 1) return 'now'
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  if (h < 48) return m % 60 ? `${h}h ${m % 60}m` : `${h}h`
+  return `${Math.floor(h / 24)}d`
+}
+
+export function taskOnlineMs(task: Task, now = Date.now()) {
+  return now - new Date(task.createdAt).getTime()
+}
+
+export function taskWorkedMs(task: Task, now = Date.now()) {
+  const base = task.workedMs ?? 0
+  if (task.status === 'doing' && task.startedAt) {
+    return base + (now - new Date(task.startedAt).getTime())
+  }
+  return base
+}
+
+export function punchStatus(task: Task, next: TaskStatus, now = Date.now()): Task {
+  let workedMs = task.workedMs ?? 0
+  let startedAt = task.startedAt
+  if (task.status === 'doing' && next !== 'doing' && startedAt) {
+    workedMs += now - new Date(startedAt).getTime()
+    startedAt = undefined
+  }
+  if (task.status !== 'doing' && next === 'doing') {
+    startedAt = new Date(now).toISOString()
+  }
+  return {
+    ...task,
+    status: next,
+    workedMs,
+    startedAt,
+    completedAt: next === 'done' ? new Date(now).toISOString() : undefined,
+  }
+}
+
 export function relative(iso: string) {
   const diff = Date.now() - new Date(iso).getTime()
   const min = Math.round(diff / 60000)
@@ -84,6 +136,10 @@ export function sortTasks(a: Task, b: Task) {
 export function taskAssignees(task: { assigneeId: string; assigneeIds?: string[] }) {
   const ids = task.assigneeIds?.length ? task.assigneeIds : task.assigneeId ? [task.assigneeId] : []
   return [...new Set(ids)]
+}
+
+export function isMarkedOn(task: { assigneeId: string; assigneeIds?: string[] }, userId: string) {
+  return taskAssignees(task).includes(userId)
 }
 
 export function canAssign(user: CrewMember, _department: Department) {

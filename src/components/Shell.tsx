@@ -8,19 +8,21 @@ import {
   House,
   ListChecks,
   MessageCircle,
+  Bell,
   Package,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
   Users,
+  Wrench,
   type LucideIcon,
 } from 'lucide-react'
 import { Avatar } from './Avatar'
 import { ThemeToggle } from './ThemeToggle'
 import { Notices } from './Notices'
-import { TaskSheet } from './TaskSheet'
-import { canSeeTask, helloParts, isFreshTask } from '../lib/format'
-import { channels } from '../data/crew'
+import { ShipBadge } from './ShipBadge'
+import { helloParts, isFreshTask, isMarkedOn } from '../lib/format'
+import { buildNotices, isNoticeSeen } from '../lib/notices'
 import { menuFor, titleFor } from '../nav'
 import { visibleChannels } from '../lib/permissions'
 import { useStore } from '../store'
@@ -35,8 +37,10 @@ const railIcon: Record<string, LucideIcon> = {
   '/calendar': CalendarDays,
   '/position': Compass,
   '/messages': MessageCircle,
+  '/notifications': Bell,
   '/crew': Users,
   '/inventory': Package,
+  '/maintenance': Wrench,
   '/cloud': Cloud,
   '/log': BookOpen,
 }
@@ -58,8 +62,8 @@ export function Bezel({ children, navFull }: { children: React.ReactNode; navFul
 }
 
 export function Shell() {
-  const { user, logout, tasks, lastRead, messages } = useStore()
-  const { taskId, navFull, setNavFull } = useUi()
+  const { user, logout, tasks, lastRead, messages, seenNotices } = useStore()
+  const { navFull, setNavFull } = useUi()
   const loc = useLocation()
   const go = useNavigate()
   const [now, setNow] = useState(() => new Date())
@@ -97,14 +101,17 @@ export function Shell() {
   const canCreate = user.level <= 2
   const first = user.name.split(' ')[0]
   const heading = titleFor(loc.pathname, first)
-  const fresh = tasks.filter((t) => canSeeTask(user, t) && isFreshTask(t, user.id, lastRead)).length
-  const unreadChat = visibleChannels(user, channels).reduce((n, ch) => {
+  const fresh = tasks.filter((t) => isMarkedOn(t, user.id) && isFreshTask(t, user.id, lastRead)).length
+  const unreadChat = visibleChannels(user).reduce((n, ch) => {
     const read = lastRead[`${user.id}:${ch.id}`]
     return (
       n +
       messages.filter((m) => m.channelId === ch.id && m.authorId !== user.id && (!read || m.at > read)).length
     )
   }, 0)
+  const unreadNotes = buildNotices({ user, tasks, lastRead }).filter(
+    (n) => !isNoticeSeen(user.id, n.id, seenNotices),
+  ).length
   const dash = loc.pathname === '/app' && !navFull
   const chromeOff = navFull
   const links = menuFor(user)
@@ -115,12 +122,13 @@ export function Shell() {
         {!chromeOff && (
           <aside className={`rail ${railOpen ? 'is-open' : ''}`}>
             <span className="rail-mark" aria-label="Thalima">
-              T
+              <img src="/mark.png" alt="" />
             </span>
             <nav>
               {links.map((l) => {
                 const Icon = railIcon[l.to]
-                const n = l.to === '/board' ? fresh : l.to === '/messages' ? unreadChat : 0
+                const n =
+                  l.to === '/board' ? fresh : l.to === '/messages' ? unreadChat : l.to === '/notifications' ? unreadNotes : 0
                 return (
                   <NavLink
                     key={l.to}
@@ -160,6 +168,7 @@ export function Shell() {
               )}
             </h1>
             <div className="ahoy">
+              <ShipBadge />
               <span>
                 {weekday}, {local}
               </span>
@@ -191,7 +200,6 @@ export function Shell() {
           </main>
         </div>
       </div>
-      {taskId && <TaskSheet />}
     </Bezel>
   )
 }

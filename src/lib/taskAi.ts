@@ -1,5 +1,6 @@
 import { crew } from '../data/crew'
-import type { CrewMember, Department, Urgency } from '../types'
+import type { CrewMember, Department, TaskKind, Urgency } from '../types'
+import { inferKind } from './opsTasks'
 
 export type TaskDraft = {
   title: string
@@ -9,6 +10,7 @@ export type TaskDraft = {
   assigneeIds: string[]
   urgency: Urgency
   due: string
+  kind: TaskKind
 }
 
 const roleWords: { match: RegExp; id: string }[] = [
@@ -93,6 +95,7 @@ export function draftFromPrompt(text: string, user: CrewMember): TaskDraft {
     assigneeIds: ids,
     urgency: parseUrgency(text),
     due,
+    kind: inferKind(title, text, people[0]?.department ?? user.department),
   }
 }
 

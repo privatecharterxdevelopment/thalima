@@ -12,10 +12,12 @@ export const appLinks: AppLink[] = [
   { to: '/app', end: true, label: 'Home' },
   { to: '/board', label: 'Tasks' },
   { to: '/calendar', label: 'Diary' },
-  { to: '/position', label: 'Chart' },
+  { to: '/position', label: 'Location' },
   { to: '/messages', label: 'Chat' },
+  { to: '/notifications', label: 'Notifications' },
   { to: '/crew', label: 'Crew' },
   { to: '/inventory', label: 'Inventory' },
+  { to: '/maintenance', label: 'Maintenance' },
   { to: '/cloud', label: 'Cloud' },
   { to: '/log', label: 'Log' },
 ]

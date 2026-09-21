@@ -38,7 +38,7 @@ function boatEl() {
   const el = document.createElement('div')
   el.className = 'boat-mark'
   el.innerHTML =
-    '<svg viewBox="0 0 24 42" width="26" height="44" aria-hidden="true"><path d="M12 1.5C14.2 8 19 16.5 19 27c0 7.2-4.4 12.2-7 13.5C9.4 39.2 5 34.2 5 27 5 16.5 9.8 8 12 1.5Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/></svg>'
+    '<span class="boat-pulse" aria-hidden="true"></span><span class="boat-pulse" aria-hidden="true"></span><svg viewBox="0 0 24 42" width="26" height="44" aria-hidden="true"><path d="M12 1.5C14.2 8 19 16.5 19 27c0 7.2-4.4 12.2-7 13.5C9.4 39.2 5 34.2 5 27 5 16.5 9.8 8 12 1.5Z" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.2"/></svg>'
   return el
 }
 
@@ -147,8 +147,11 @@ export function NavWidget({ variant = 'strip' }: { variant?: 'strip' | 'page' | 
       dressMap(map)
       draw(map)
       frame(map, true)
-      window.setTimeout(() => map.resize(), 60)
-      window.setTimeout(() => map.resize(), 400)
+      const safeResize = () => {
+        if (mapRef.current === map) map.resize()
+      }
+      window.setTimeout(safeResize, 60)
+      window.setTimeout(safeResize, 400)
     }
     map.on('load', attach)
     map.on('style.load', attach)

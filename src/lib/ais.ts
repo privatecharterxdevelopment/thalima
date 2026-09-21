@@ -3,6 +3,10 @@ import { position } from '../data/yacht'
 import { haversineNm } from './geo'
 import { reverseGeocode } from './geocode'
 
+export function isSailing(sogKn: number | null | undefined) {
+  return (sogKn ?? 0) > 0.4
+}
+
 export type BoatFix = {
   lat: number
   lon: number
@@ -110,7 +114,7 @@ export async function fetchAisFix(): Promise<BoatFix> {
     city: place.city,
     region: place.region,
     country: place.country,
-    status: sog > 0.4 ? 'Under way' : position.status,
+    status: isSailing(sog) ? 'Sailing' : 'At anchor',
     source: 'ais',
   }
 }

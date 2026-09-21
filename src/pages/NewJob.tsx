@@ -7,7 +7,8 @@ import { crew } from '../data/crew'
 import { canAssign, taskAssignees } from '../lib/format'
 import { draftFromPrompt, dueInputValue, type TaskDraft } from '../lib/taskAi'
 import { useStore } from '../store'
-import type { AttachedFile, Urgency } from '../types'
+import type { AttachedFile, TaskKind, Urgency } from '../types'
+import { kindLabel } from '../lib/opsTasks'
 
 export function NewJob() {
   const { user, addTask } = useStore()
@@ -61,8 +62,8 @@ export function NewJob() {
             onSubmit={(e) => {
               e.preventDefault()
               if (!canAssign(user, draft.department) || !draft.title.trim()) return
-              addTask({ ...draft, files })
-              nav('/board')
+              const id = addTask({ ...draft, files })
+              nav(`/board/${id}`)
             }}
           >
             <input
@@ -86,12 +87,22 @@ export function NewJob() {
             </div>
             <div className="task-draft-row">
               <select
+                value={draft.kind}
+                onChange={(e) => setDraft({ ...draft, kind: e.target.value as TaskKind })}
+              >
+                {(Object.keys(kindLabel) as TaskKind[]).map((k) => (
+                  <option key={k} value={k}>
+                    {kindLabel[k]}
+                  </option>
+                ))}
+              </select>
+              <select
                 value={draft.urgency}
                 onChange={(e) => setDraft({ ...draft, urgency: e.target.value as Urgency })}
               >
                 {(['routine', 'soon', 'now', 'emergency'] as Urgency[]).map((u) => (
                   <option key={u} value={u}>
-                    {u[0].toUpperCase() + u.slice(1)}
+                    {u === 'emergency' ? 'Critical' : u[0].toUpperCase() + u.slice(1)}
                   </option>
                 ))}
               </select>

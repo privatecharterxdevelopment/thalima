@@ -3,9 +3,10 @@ import { NavWidget } from '../components/NavWidget'
 import { Avatar } from '../components/Avatar'
 import { useUi } from '../ui'
 import { useStore } from '../store'
-import { canSeeTask, clock, taskAssignees } from '../lib/format'
+import { clock, isMarkedOn, taskAssignees } from '../lib/format'
 import { eventsOnDay, sameDay } from '../lib/cal'
-import { crew, deptLabel, inventory, statusLabel } from '../data/crew'
+import { crew, deptLabel, statusLabel } from '../data/crew'
+import { buildAlerts } from '../lib/alerts'
 
 function weekDays() {
   const now = new Date()
@@ -20,8 +21,8 @@ function weekDays() {
 }
 
 export function Bridge() {
-  const { user, tasks, events, systems } = useStore()
-  const { navFull, openTask } = useUi()
+  const { user, tasks, events, systems, ops } = useStore()
+  const { navFull } = useUi()
   const nav = useNavigate()
   if (!user) return null
 
@@ -34,7 +35,7 @@ export function Bridge() {
   }
 
   const assigned = tasks
-    .filter((t) => canSeeTask(user, t) && t.status !== 'done' && taskAssignees(t).length > 0)
+    .filter((t) => t.status !== 'done' && isMarkedOn(t, user.id))
     .sort((a, b) => new Date(a.due).getTime() - new Date(b.due).getTime())
   const live =
     assigned.filter((t) => t.status === 'doing').sort((a, b) => new Date(a.due).getTime() - new Date(b.due).getTime())[0] ??
@@ -49,10 +50,7 @@ export function Bridge() {
   const upcomingEvent = [...events]
     .filter((e) => new Date(e.end).getTime() >= Date.now())
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0]
-  const overdueN = assigned.filter((t) => new Date(t.due).getTime() < Date.now()).length
-  const waitingN = assigned.filter((t) => t.status === 'waiting').length
-  const lowN = inventory.filter((i) => i.stock < i.min).length
-  const hydroWatch = systems.hydraulics === 'watch'
+  const alerts = buildAlerts({ tasks, ops, systems })
 
   return (
     <div className="home">
@@ -64,7 +62,7 @@ export function Bridge() {
         <button
           className="glass-card apple-widget home-live"
           type="button"
-          onClick={() => (live ? openTask(live.id) : nav('/board'))}
+          onClick={() => (live ? nav(`/board/${live.id}`) : nav('/board'))}
         >
           <div className="apple-kicker">
             <span>{live ? statusLabel[live.status] : 'Now'}</span>
@@ -122,13 +120,17 @@ export function Bridge() {
           )}
         </button>
 
-        <button className="glass-card apple-widget" type="button" onClick={() => nav('/board')}>
+        <button
+          className={`glass-card apple-widget home-tasks ${assigned.length ? 'is-pending' : 'is-clear'}`}
+          type="button"
+          onClick={() => nav('/board')}
+        >
           <div className="apple-kicker">
             <span>Tasks</span>
             <em>{assigned.length}</em>
           </div>
           {assigned.length === 0 ? (
-            <p className="apple-empty">No assigned tasks.</p>
+            <p className="apple-empty">No pending tasks</p>
           ) : (
             <ul className="apple-tasks">
               {assigned.map((t) => (
@@ -146,26 +148,17 @@ export function Bridge() {
             <span>Alerts</span>
           </div>
           <div className="alert-list">
-            <button type="button" className={`alert-row ${overdueN ? 'is-hot' : ''}`} onClick={() => nav('/board')}>
-              <b>{overdueN}</b>
-              <span>Overdue tasks</span>
-            </button>
-            <button type="button" className={`alert-row ${lowN ? 'is-soon' : ''}`} onClick={() => nav('/inventory')}>
-              <b>{lowN}</b>
-              <span>Below min stock</span>
-            </button>
-            <button type="button" className={`alert-row ${waitingN ? 'is-soon' : ''}`} onClick={() => nav('/board')}>
-              <b>{waitingN}</b>
-              <span>Waiting on parts</span>
-            </button>
-            <button
-              type="button"
-              className={`alert-row ${hydroWatch ? 'is-soon' : ''}`}
-              onClick={() => nav('/board')}
-            >
-              <b>{hydroWatch ? 1 : 0}</b>
-              <span>Plant on watch</span>
-            </button>
+            {alerts.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className={`alert-row ${a.tone === 'hot' ? 'is-hot' : a.tone === 'soon' ? 'is-soon' : ''}`}
+                onClick={() => nav(a.to)}
+              >
+                <b>{a.count}</b>
+                <span>{a.label}</span>
+              </button>
+            ))}
           </div>
         </section>
       </div>

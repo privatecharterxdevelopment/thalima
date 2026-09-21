@@ -201,20 +201,7 @@ export const inventory = [
   { id: 'i16', dept: 'galley', item: 'Dentex / fish freeze', stock: 3, min: 2, unit: 'kg', note: 'Owner dinner window' },
 ]
 
-export const channels: Channel[] = [
-  { id: 'all', name: 'All crew', kind: 'all' },
-  { id: 'bridge', name: 'Bridge', kind: 'department', department: 'bridge' },
-  { id: 'engineering', name: 'Engineering', kind: 'department', department: 'engineering' },
-  { id: 'interior', name: 'Interior', kind: 'department', department: 'interior' },
-  { id: 'galley', name: 'Galley', kind: 'department', department: 'galley' },
-  { id: 'deck', name: 'Deck', kind: 'department', department: 'deck' },
-  { id: 'dm-eddy-marco', name: 'Max · Marco', kind: 'dm', memberIds: ['eddy', 'marco'] },
-  { id: 'dm-eddy-sofia', name: 'Max · Sofia', kind: 'dm', memberIds: ['eddy', 'sofia'] },
-  { id: 'dm-eddy-julien', name: 'Max · Julien', kind: 'dm', memberIds: ['eddy', 'julien'] },
-  { id: 'dm-eddy-luca', name: 'Max · Luca', kind: 'dm', memberIds: ['eddy', 'luca'] },
-  { id: 'dm-sofia-julien', name: 'Sofia · Julien', kind: 'dm', memberIds: ['sofia', 'julien'] },
-  { id: 'dm-marco-luca', name: 'Marco · Luca', kind: 'dm', memberIds: ['marco', 'luca'] },
-]
+export const channels: Channel[] = [{ id: 'all', name: 'All crew', kind: 'all' }]
 
 export const cabins: GuestCabin[] = [
   {
@@ -292,15 +279,16 @@ export const urgencyLabel: Record<string, string> = {
   routine: 'Routine',
   soon: 'Soon',
   now: 'Now',
-  emergency: 'Emergency',
+  emergency: 'Critical',
 }
 
 export const statusLabel: Record<string, string> = {
-  backlog: 'Backlog',
-  ready: 'Ready',
-  doing: 'On it',
-  waiting: 'Waiting',
-  done: 'Done',
+  open: 'Open',
+  doing: 'In progress',
+  waiting: 'Awaiting',
+  done: 'Completed',
+  backlog: 'Open',
+  ready: 'Open',
 }
 
-export const statusOrder = ['backlog', 'ready', 'doing', 'waiting', 'done'] as const
+export const statusOrder = ['open', 'doing', 'waiting', 'done'] as const

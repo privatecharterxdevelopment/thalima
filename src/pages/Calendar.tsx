@@ -1,10 +1,17 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { calRoleLabel, calRoles, crew } from '../data/crew'
-import { clock } from '../lib/format'
+import { clock, dayClock } from '../lib/format'
 import { monthDays, sameDay } from '../lib/cal'
 import { canAdminCalendar, canEditCalendar } from '../lib/permissions'
 import { useStore } from '../store'
+import { SectionTabs } from '../components/SectionTabs'
 import type { CalRole } from '../types'
+
+const calTabs = [
+  { id: 'diary', label: 'Diary' },
+  { id: 'trips', label: 'Trips / guests' },
+] as const
 
 function localInput(iso: string) {
   const d = new Date(iso)
@@ -13,7 +20,9 @@ function localInput(iso: string) {
 }
 
 export function Calendar() {
-  const { user, events, addEvent, removeEvent } = useStore()
+  const { user, events, addEvent, removeEvent, ops, addTask, setTripPrepped } = useStore()
+  const [params, setParams] = useSearchParams()
+  const view = (params.get('tab') === 'trips' ? 'trips' : 'diary') as 'diary' | 'trips'
   const [role, setRole] = useState<CalRole | 'all'>(() => {
     if (user && user.level > 1 && (calRoles as readonly string[]).includes(user.role)) {
       return user.role as CalRole
@@ -36,7 +45,93 @@ export function Calendar() {
   const canWrite = role === 'all' ? admin : canEditCalendar(user, role)
 
   return (
-    <div className="cal">
+    <div className={`cal ${view === 'trips' ? 'cal-trips' : ''}`}>
+      <div className="cal-tabs">
+        <SectionTabs value={view} onChange={(id) => setParams(id === 'diary' ? {} : { tab: id })} tabs={[...calTabs]} />
+      </div>
+      {view === 'trips' ? (
+        <div className="trip-list">
+          {ops.trips.map((trip) => (
+            <article key={trip.id} className="glass-card trip-card">
+              <p className="inv-kicker">{trip.ownerAboard ? 'Owner aboard' : 'Charter / guests'}</p>
+              <h2>{trip.title}</h2>
+              <p className="muted">
+                {dayClock(trip.from)} → {dayClock(trip.to)}
+              </p>
+              <p>{trip.notes}</p>
+              <p className="muted">
+                {trip.transfers} · {trip.reservations}
+              </p>
+              {trip.guests.length > 0 && (
+                <table className="table inv-table">
+                  <thead>
+                    <tr>
+                      <th>Guest</th>
+                      <th>Cabin</th>
+                      <th>Diet</th>
+                      <th>Allergy</th>
+                      <th>Laundry</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trip.guests.map((g) => (
+                      <tr key={g.name}>
+                        <td>{g.name}</td>
+                        <td>{g.cabin}</td>
+                        <td>{g.diet}</td>
+                        <td className={g.allergy !== '—' ? 'low' : ''}>{g.allergy}</td>
+                        <td className="muted">{g.laundry}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+              {user.level <= 2 && !trip.prepped && (
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => {
+                    addTask({
+                      title: `Prepare cabins · ${trip.title}`,
+                      body: trip.guests.map((g) => `${g.name} · ${g.cabin} · ${g.allergy}`).join('\n') || trip.notes,
+                      department: 'interior',
+                      assigneeId: 'sofia',
+                      urgency: 'soon',
+                      due: trip.from,
+                      kind: 'guest_request',
+                    })
+                    addTask({
+                      title: `Provisioning · ${trip.title}`,
+                      body: trip.notes,
+                      department: 'galley',
+                      assigneeId: 'julien',
+                      urgency: 'soon',
+                      due: trip.from,
+                      kind: 'provisioning',
+                    })
+                    if (trip.transfers) {
+                      addTask({
+                        title: `Transfer · ${trip.title}`,
+                        body: trip.transfers,
+                        department: 'deck',
+                        assigneeId: 'luca',
+                        urgency: 'soon',
+                        due: trip.from,
+                        kind: 'tender',
+                      })
+                    }
+                    setTripPrepped(trip.id)
+                  }}
+                >
+                  Make prep tasks
+                </button>
+              )}
+              {trip.prepped && <p className="hint">Prep tasks are on the board.</p>}
+            </article>
+          ))}
+        </div>
+      ) : (
+        <>
       <div className="cal-month glass-card">
         <div className="cal-nav">
           <button className="ghost-icon" onClick={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))} aria-label="Previous month">
@@ -137,6 +232,8 @@ export function Calendar() {
             setCompose(false)
           }}
         />
+      )}
+        </>
       )}
     </div>
   )
