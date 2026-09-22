@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { Plus } from 'lucide-react'
 import { SectionTabs } from '../components/SectionTabs'
+import { NewPurchase, NewStockItem } from '../components/InventoryForms'
 import { deptLabel, inventory } from '../data/crew'
 import { canAdminCalendar } from '../lib/permissions'
 import { dayClock } from '../lib/format'
@@ -31,12 +33,18 @@ export function Inventory() {
   const house = (houses.some((h) => h.id === params.get('house')) ? params.get('house') : 'all') as (typeof houses)[number]['id']
   const admin = user ? canAdminCalendar(user) : false
 
+  const allTech = useMemo(() => [...inventory, ...(ops.stock ?? [])], [ops.stock])
   const tech = useMemo(
-    () => (house === 'all' ? inventory : inventory.filter((i) => i.dept === house)),
-    [house],
+    () => (house === 'all' ? allTech : allTech.filter((i) => i.dept === house)),
+    [house, allTech],
   )
+  const closeForm = () => {
+    const next = new URLSearchParams(params)
+    next.delete('new')
+    setParams(next, { replace: true })
+  }
   const shop = useMemo(() => {
-    const lowTech = inventory.filter((i) => i.stock < i.min).map((i) => ({
+    const lowTech = allTech.filter((i) => i.stock < i.min).map((i) => ({
       id: i.id,
       name: i.item,
       have: `${i.stock} ${i.unit}`,
@@ -62,19 +70,27 @@ export function Inventory() {
         where: s.location,
       }))
     return [...lowTech, ...lowProv, ...lowSpare]
-  }, [ops.provisions, ops.spares])
+  }, [allTech, ops.provisions, ops.spares])
 
   if (!user) return null
 
   return (
     <div className="pad inv">
       <div className="inv-head">
-        <div>
-          <p className="inv-kicker">Stores</p>
-          <p className="inv-copy">Technical stock, provisioning, and the shopping list that feeds “below min”.</p>
-        </div>
         <SectionTabs value={tab} onChange={(id) => setParams({ tab: id })} tabs={[...tabs]} />
+        <div className="inv-actions">
+          <button className="btn ghost" type="button" onClick={() => setParams({ tab, new: 'item' })}>
+            <Plus size={14} strokeWidth={2} />
+            Add item
+          </button>
+          <button className="btn" type="button" onClick={() => setParams({ tab: 'shopping', new: 'purchase' })}>
+            <Plus size={14} strokeWidth={2} />
+            Purchase request
+          </button>
+        </div>
       </div>
+      {params.get('new') === 'item' ? <NewStockItem onClose={closeForm} /> : null}
+      {params.get('new') === 'purchase' ? <NewPurchase onClose={closeForm} /> : null}
 
       {tab === 'technical' && (
         <>

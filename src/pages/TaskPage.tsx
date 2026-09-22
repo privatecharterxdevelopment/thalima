@@ -1,35 +1,24 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Check } from 'lucide-react'
 import { AssignPicks } from '../components/AssignPicks'
-import { Avatar } from '../components/Avatar'
+import { WhoLine } from '../components/WhoLine'
+import { StatusPill, statusTone } from '../components/StatusPill'
 import { FileAdd, FileList } from '../components/FileList'
-import { crew, deptLabel, statusLabel } from '../data/crew'
-import {
-  canMoveTask,
-  canSeeTask,
-  elapsedClock,
-  relative,
-  taskAssignees,
-  taskOnlineMs,
-  taskWorkedMs,
-} from '../lib/format'
+import { crew, deptLabel } from '../data/crew'
+import { canMoveTask, canSeeTask, dueLine, relative, taskAssignees } from '../lib/format'
 import { awaitLabel, kindLabel } from '../lib/opsTasks'
 import { useStore } from '../store'
-import type { AwaitReason, TaskStatus } from '../types'
-
-const statuses: TaskStatus[] = ['open', 'doing', 'waiting', 'done']
+import type { CrewMember } from '../types'
 
 export function TaskPage() {
   const { taskId } = useParams()
   const { user, tasks, updateTask, addTaskNote } = useStore()
-  const [now, setNow] = useState(() => Date.now())
   const [note, setNote] = useState('')
+  const [pop, setPop] = useState(false)
+  const popTimer = useRef<number>(0)
 
-  useEffect(() => {
-    const t = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(t)
-  }, [])
+  useEffect(() => () => window.clearTimeout(popTimer.current), [])
 
   if (!user) return null
 
@@ -37,27 +26,20 @@ export function TaskPage() {
   if (!task || !canSeeTask(user, task)) return <Navigate to="/board" replace />
 
   const can = canMoveTask(user, task)
+  const done = task.status === 'done' || pop
   const people = taskAssignees(task)
     .map((id) => crew.find((c) => c.id === id))
-    .filter(Boolean)
-  const author = crew.find((c) => c.id === task.createdBy)
-  const log = [
-    {
-      id: `brief-${task.id}`,
-      authorId: task.createdBy,
-      text: task.body,
-      at: task.createdAt,
-      kind: 'note' as const,
-    },
-    ...(task.notes ?? []),
-  ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+    .filter((who): who is CrewMember => Boolean(who))
+  const log = [...(task.notes ?? [])].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+  const waiting = !done && task.status === 'waiting' && task.awaitReason ? awaitLabel[task.awaitReason] : null
 
-  function setStatus(status: TaskStatus) {
-    if (!task || !can || status === task.status) return
-    updateTask(task.id, {
-      status,
-      awaitReason: status === 'waiting' ? (task.awaitReason ?? 'spare') : undefined,
-    })
+  function confirm() {
+    if (!task || !can || done) return
+    setPop(true)
+    window.clearTimeout(popTimer.current)
+    popTimer.current = window.setTimeout(() => {
+      updateTask(task.id, { status: 'done' })
+    }, 380)
   }
 
   function post(e: FormEvent) {
@@ -76,70 +58,42 @@ export function TaskPage() {
 
       <div className="task-page-grid">
         <div className="task-page-main">
-          <header className="task-page-head">
-            <p className="eyebrow">
+          <div className="task-page-tags">
+            <StatusPill status={done ? 'done' : task.status} tone={done ? 'done' : statusTone(task)} />
+            <span>
               {deptLabel[task.department]} · {kindLabel[task.kind]}
-              {author ? ` · ${author.name.split(' ')[0]} opened` : ''}
-            </p>
-            <h1>{task.title}</h1>
-            <ul className="task-page-who">
-              {people.map((who) => (
-                <li key={who!.id}>
-                  <Avatar person={who!} />
-                  <span>
-                    <b>{who!.name}</b>
-                    <em>{who!.title}</em>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </header>
-
-          <div className="task-clocks">
+            </span>
+          </div>
+          <h2 className="task-page-title">{task.title}</h2>
+          <p className="task-page-body">{task.body}</p>
+          <div className="task-page-meta">
+            <WhoLine people={people} />
             <p>
-              <span>Online</span>
-              <b>{elapsedClock(taskOnlineMs(task, now))}</b>
-            </p>
-            <p>
-              <span>Worked</span>
-              <b>{elapsedClock(taskWorkedMs(task, now))}</b>
+              {dueLine(task.due)}
+              {waiting ? ` · ${waiting}` : ''}
             </p>
           </div>
 
-          <div className="task-status">
-            {statuses.map((s) => (
-              <button
-                key={s}
-                type="button"
-                className={task.status === s ? 'on' : ''}
-                disabled={!can}
-                onClick={() => setStatus(s)}
-              >
-                {statusLabel[s]}
-              </button>
-            ))}
-          </div>
+          {can ? (
+            <button
+              type="button"
+              className={`task-confirm ${done ? 'is-done' : ''} ${pop ? 'is-pop' : ''}`}
+              disabled={done}
+              onClick={confirm}
+            >
+              <span className="task-confirm-label">Confirm</span>
+              <span className="task-confirm-check" aria-hidden>
+                <Check size={22} strokeWidth={2.6} />
+              </span>
+            </button>
+          ) : null}
 
-          {task.status === 'waiting' && can && (
-            <div className="task-status is-wait">
-              {(Object.keys(awaitLabel) as AwaitReason[]).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={task.awaitReason === r ? 'on' : ''}
-                  onClick={() => updateTask(task.id, { awaitReason: r })}
-                >
-                  {awaitLabel[r]}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {can && (
+          {can && !done && user.level === 1 ? (
             <div className="task-assign">
-              <span>Station / person</span>
+              <span>Assigned crew</span>
               <AssignPicks
                 value={taskAssignees(task)}
+                date={task.due}
                 onChange={(ids) => {
                   const first = crew.find((c) => c.id === ids[0])
                   updateTask(task.id, {
@@ -150,24 +104,32 @@ export function TaskPage() {
                 }}
               />
             </div>
-          )}
+          ) : null}
         </div>
 
         <div className="task-page-side">
           <section className="task-log">
             <p className="eyebrow">Log</p>
+            {log.length === 0 ? <p className="task-log-empty">No notes yet.</p> : null}
             {log.map((entry) => {
               const who = crew.find((c) => c.id === entry.authorId)
               const sys = entry.kind && entry.kind !== 'note'
               return (
                 <article key={entry.id} className={sys ? 'task-log-item is-sys' : 'task-log-item'}>
-                  {who ? <Avatar person={who} /> : <span className="task-log-dot" />}
+                  <span className="task-log-dot" />
                   <div>
                     <p>
                       <b>{who?.name.split(' ')[0] ?? 'Crew'}</b>
                       <time>{relative(entry.at)}</time>
                     </p>
-                    <p>{entry.text}</p>
+                    {sys && entry.kind === 'status' ? (
+                      <>
+                        <p className="task-log-sys">Status changed</p>
+                        <p>{entry.text}</p>
+                      </>
+                    ) : (
+                      <p>{entry.text}</p>
+                    )}
                   </div>
                 </article>
               )
@@ -186,23 +148,31 @@ export function TaskPage() {
           {can ? (
             <form className="task-compose" onSubmit={post}>
               <textarea
-                rows={3}
+                rows={2}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Add a note to the log…"
               />
               <div>
-                <FileAdd
-                  files={task.files ?? []}
-                  onChange={(files) => updateTask(task.id, { files })}
-                />
+                <div className="task-compose-actions">
+                  <FileAdd
+                    files={task.files ?? []}
+                    onChange={(files) => updateTask(task.id, { files })}
+                  />
+                  <FileAdd
+                    files={task.files ?? []}
+                    onChange={(files) => updateTask(task.id, { files })}
+                    accept="image/*"
+                    label="Photo"
+                  />
+                </div>
                 <button className="btn" type="submit" disabled={!note.trim()}>
                   Post
                 </button>
               </div>
             </form>
           ) : (
-            <p className="hint">You can read this. Status and notes are for the assigned station.</p>
+            <p className="hint">You can read this. Confirm is for the assigned station.</p>
           )}
         </div>
       </div>

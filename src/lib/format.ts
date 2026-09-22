@@ -38,6 +38,21 @@ export function clock(iso: string) {
   })
 }
 
+export function dueLine(iso: string) {
+  const d = new Date(iso)
+  const now = new Date()
+  const same =
+    d.toLocaleDateString('en-GB', { timeZone: 'Europe/Rome' }) ===
+    now.toLocaleDateString('en-GB', { timeZone: 'Europe/Rome' })
+  if (same) return `Today ${clock(iso)}`
+  const date = d.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'Europe/Rome',
+  })
+  return `Due ${date}`
+}
+
 export function dayClock(iso: string) {
   return new Date(iso).toLocaleString('en-GB', {
     weekday: 'short',
@@ -133,6 +148,46 @@ export function sortTasks(a: Task, b: Task) {
   return new Date(a.due).getTime() - new Date(b.due).getTime()
 }
 
+export const stationIds: Department[] = ['bridge', 'engineering', 'deck', 'interior', 'galley']
+
+export function parseStations(raw: unknown, fallback?: Department): Department[] {
+  const bits: string[] = []
+  if (Array.isArray(raw)) bits.push(...raw.map(String))
+  else if (typeof raw === 'string' && raw.trim()) {
+    const text = raw.trim()
+    if (text.startsWith('[')) {
+      try {
+        bits.push(...(JSON.parse(text) as unknown[]).map(String))
+      } catch {
+        bits.push(...text.split(','))
+      }
+    } else if (text.startsWith('{') && text.endsWith('}')) {
+      bits.push(...text.slice(1, -1).split(','))
+    } else bits.push(...text.split(','))
+  }
+  const cleaned = [
+    ...new Set(
+      bits
+        .map((d) => d.trim().replace(/^["']|["']$/g, ''))
+        .filter((d): d is Department => stationIds.includes(d as Department)),
+    ),
+  ]
+  if (fallback && stationIds.includes(fallback) && !cleaned.includes(fallback)) cleaned.unshift(fallback)
+  return cleaned.length ? cleaned : fallback && stationIds.includes(fallback) ? [fallback] : ['deck']
+}
+
+export function stationsOf(user: Pick<CrewMember, 'department' | 'departments'>): Department[] {
+  return parseStations(user.departments, user.department)
+}
+
+export function onStation(user: Pick<CrewMember, 'department' | 'departments'>, department: Department) {
+  return stationsOf(user).includes(department)
+}
+
+export function canManageUsers(user: Pick<CrewMember, 'access' | 'level'>) {
+  return user.access === 'owner' || user.level === 1
+}
+
 export function taskAssignees(task: { assigneeId: string; assigneeIds?: string[] }) {
   const ids = task.assigneeIds?.length ? task.assigneeIds : task.assigneeId ? [task.assigneeId] : []
   return [...new Set(ids)]
@@ -149,19 +204,13 @@ export function canAssign(user: CrewMember, _department: Department) {
 export function canSeeTask(user: CrewMember, task: Task) {
   const assigned = taskAssignees(task).includes(user.id)
   if (user.level === 1) return true
-  if (user.level === 2) {
-    return task.department === user.department || assigned || task.createdBy === user.id
-  }
-  return assigned || task.createdBy === user.id
+  return onStation(user, task.department) || assigned || task.createdBy === user.id
 }
 
 export function canMoveTask(user: CrewMember, task: Task) {
   const assigned = taskAssignees(task).includes(user.id)
   if (user.level === 1) return true
-  if (user.level === 2) {
-    return task.department === user.department || assigned || task.createdBy === user.id
-  }
-  return assigned
+  return onStation(user, task.department) || assigned || (user.level <= 2 && task.createdBy === user.id)
 }
 
 export function tasksSeenKey(userId: string) {

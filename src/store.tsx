@@ -4,17 +4,33 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
-import { channels, crew, statusLabel } from './data/crew'
+import { channels, crew, resetCrew, setLiveCrew, statusLabel } from './data/crew'
+import { api, recordActivity } from './lib/api'
+import { expenseMailFrom, notifyChat, notifyExpenseApproval, notifyTaskAssigned } from './lib/notify'
 import { seed } from './data/seed'
 import { opsSeed } from './data/ops'
-import { keepMessages } from './lib/chat'
-import { inferKind, normalizeTask } from './lib/opsTasks'
+import { expensesSeed } from './data/accounting'
+import { rosterSeed } from './data/roster'
+import { chatRecipients, keepMessages } from './lib/chat'
+import { pickOps, type DeletedIds } from './lib/opsSync'
+import { inferKind } from './lib/opsTasks'
 import { fetchWeather } from './lib/weather'
 import { currentFix, subscribeFix } from './lib/ais'
 import { haversineNm } from './lib/geo'
+import {
+  defaultApproverId,
+  emptyDraftExpense,
+  expenseAudit,
+  expenseCategoryLabel,
+  missingExpenseFields,
+  nextExpenseRef,
+} from './lib/accounting'
+import { addDays, dutyOf, presenceOf, rosterAudit, selfStatusLabel } from './lib/roster'
+import { romeDay } from './lib/opsTasks'
 import type {
   AppSnapshot,
   AttachedFile,
@@ -23,10 +39,21 @@ import type {
   CloudDoc,
   Department,
   DrillKind,
+  Expense,
+  ExpenseCategory,
+  ExpenseStatus,
   Handover,
   OpsState,
   PurchaseStatus,
+  PurchaseRequest,
+  ProvisionItem,
+  StockItem,
+  RosterEntry,
+  SelfStatus,
+  AbsenceReason,
+  RosterKind,
   Task,
+  Trip,
   TaskKind,
   TaskNote,
   TaskStatus,
@@ -36,12 +63,10 @@ import type {
   TaskEvent,
   TaskRecur,
 } from './types'
-import { punchStatus, taskAssignees, tasksSeenKey, uid } from './lib/format'
-import { noticeSeenKey } from './lib/notices'
+import { punchStatus, stationsOf, taskAssignees, tasksSeenKey, uid } from './lib/format'
+import { emergencyDismissKey, noticeSeenKey } from './lib/notices'
 import { applyHtmlTheme, readNight, writeTheme } from './lib/siteCopy'
 
-const KEY = 'thalima.crew.v1'
-const SESSION = 'thalima.seat'
 const KEEP = 'thalima.seat.keep'
 
 function taskNote(authorId: string, text: string, kind: TaskNote['kind'] = 'note'): TaskNote {
@@ -61,98 +86,16 @@ function withNote(task: Task, note: TaskNote): Task {
 
 function load(): AppSnapshot {
   const base = seed()
-  try {
-    const raw = localStorage.getItem(KEY)
-    if (raw) {
-      const parsed = JSON.parse(raw) as Partial<AppSnapshot>
-      const seedById = new Map(base.tasks.map((t) => [t.id, t]))
-      const savedTasks = (parsed.tasks ?? base.tasks).map((t) => {
-        const ids = t.assigneeIds?.length ? t.assigneeIds : t.assigneeId ? [t.assigneeId] : []
-        const seed = seedById.get(t.id)
-        const merged = seed
-          ? {
-              ...seed,
-              ...t,
-              assigneeIds: ids,
-              assigneeId: ids[0] ?? t.assigneeId,
-              kind: t.kind ?? seed.kind,
-              dueKind: t.dueKind ?? seed.dueKind,
-              dueHours: t.dueHours ?? seed.dueHours,
-              dueAssetId: t.dueAssetId ?? seed.dueAssetId,
-              recur: t.recur ?? seed.recur,
-              eventCue: t.eventCue ?? seed.eventCue,
-              ownerRequest: t.ownerRequest ?? seed.ownerRequest,
-              awaitReason: t.awaitReason ?? seed.awaitReason,
-              notes: t.notes?.length ? t.notes : (seed.notes ?? []),
-              startedAt:
-                t.startedAt && t.startedAt !== t.createdAt ? t.startedAt : (seed.startedAt ?? t.startedAt),
-              workedMs: t.workedMs ?? seed.workedMs,
-              title: seed.title,
-              body: seed.body,
-              due: seed.due,
-              urgency: seed.urgency,
-              department: seed.department,
-            }
-          : { ...t, assigneeIds: ids, assigneeId: ids[0] ?? t.assigneeId }
-        return normalizeTask(merged)
-      })
-      const have = new Set(savedTasks.map((t) => t.id))
-      const savedOps = parsed.ops
-      const baseOps = opsSeed()
-      Object.assign(base, {
-        tasks: [...savedTasks, ...base.tasks.filter((t) => !have.has(t.id))].map(normalizeTask),
-        messages: keepMessages(parsed.messages ?? base.messages),
-        log: parsed.log ?? base.log,
-        events: parsed.events
-          ? [
-              ...parsed.events,
-              ...base.events.filter((e) => !parsed.events!.some((p) => p.id === e.id)),
-            ]
-          : base.events,
-        systems: parsed.systems ?? base.systems,
-        lastRead: parsed.lastRead ?? base.lastRead,
-        seenNotices: parsed.seenNotices ?? base.seenNotices,
-        theme: parsed.theme ?? base.theme,
-        docs: parsed.docs
-          ? [
-              ...parsed.docs,
-              ...base.docs.filter((d) => !parsed.docs!.some((p) => p.id === d.id)),
-            ]
-          : base.docs,
-        ops: savedOps
-          ? {
-              equipment: savedOps.equipment ?? baseOps.equipment,
-              services: savedOps.services ?? baseOps.services,
-              defects: savedOps.defects ?? baseOps.defects,
-              spares: savedOps.spares ?? baseOps.spares,
-              certificates: savedOps.certificates ?? baseOps.certificates,
-              leave: savedOps.leave ?? baseOps.leave,
-              handovers: savedOps.handovers ?? baseOps.handovers,
-              provisions: savedOps.provisions ?? baseOps.provisions,
-              purchases: savedOps.purchases ?? baseOps.purchases,
-              contacts: savedOps.contacts ?? baseOps.contacts,
-              drills: savedOps.drills ?? baseOps.drills,
-              trips: savedOps.trips ?? baseOps.trips,
-            }
-          : baseOps,
-      })
-    }
-  } catch {
-    /* fresh */
-  }
-  try {
-    const keep = localStorage.getItem(KEEP)
-    const seat = (keep && crew.some((c) => c.id === keep) ? keep : null) ?? sessionStorage.getItem(SESSION)
-    base.userId = seat && crew.some((c) => c.id === seat) ? seat : null
-  } catch {
-    base.userId = null
-  }
+  base.userId = null
   base.theme = readNight() ? 'dark' : 'light'
   applyHtmlTheme(base.theme)
   return base
 }
 
 type Store = AppSnapshot & {
+  authReady: boolean
+  signIn: (email: string, password: string, remember?: boolean) => Promise<string | null>
+  refreshPeople: () => Promise<void>
   login: (id: string, remember?: boolean) => void
   logout: () => void
   setTheme: (theme: 'light' | 'dark') => void
@@ -181,6 +124,8 @@ type Store = AppSnapshot & {
   markRead: (channelId: string) => void
   markTasksSeen: () => void
   markNoticeSeen: (id: string) => void
+  dismissEmergency: (taskId: string) => void
+  claimEmergency: (taskId: string) => void
   addLog: (text: string) => void
   addEvent: (input: { title: string; body: string; role: CalRole; start: string; end: string }) => void
   removeEvent: (id: string) => void
@@ -190,6 +135,59 @@ type Store = AppSnapshot & {
   addHandover: (input: { toId: string; body: string }) => void
   addDrill: (input: { kind: DrillKind; note: string }) => void
   setTripPrepped: (id: string) => void
+  addTrip: (input: Omit<Trip, 'id' | 'prepped'>) => string
+  addStockItem: (
+    input: { kind: 'technical'; row: Omit<StockItem, 'id'> } | { kind: 'provisioning'; row: Omit<ProvisionItem, 'id'> },
+  ) => void
+  addPurchase: (input: Pick<PurchaseRequest, 'title' | 'supplier' | 'amount' | 'currency' | 'category' | 'note'>) => void
+  addReceipt: (file: AttachedFile) => string
+  addManualExpense: (input: {
+    vendor: string
+    date: string
+    amount: number
+    currency: string
+    eurAmount: number
+    vat: number | null
+    category: ExpenseCategory
+    description: string
+    receipt?: AttachedFile
+    approverId: string
+  }) => string
+  updateExpense: (
+    id: string,
+    patch: Partial<
+      Pick<
+        Expense,
+        | 'vendor'
+        | 'date'
+        | 'category'
+        | 'amount'
+        | 'currency'
+        | 'eurAmount'
+        | 'vat'
+        | 'invoiceNo'
+        | 'description'
+        | 'place'
+        | 'paymentMethod'
+        | 'approverId'
+        | 'receipt'
+      >
+    >,
+  ) => void
+  submitExpense: (id: string) => void
+  approveExpense: (id: string) => void
+  rejectExpense: (id: string) => void
+  addRosterRequest: (input: {
+    crewId: string
+    from: string
+    to: string
+    kind: RosterKind
+    reason: AbsenceReason
+    comment: string
+  }) => string
+  decideRoster: (id: string, decision: 'approved' | 'rejected') => void
+  setMyStatus: (status: SelfStatus) => void
+  cancelRoster: (id: string) => void
   reset: () => void
   user: (typeof crew)[number] | null
 }
@@ -198,6 +196,80 @@ const Ctx = createContext<Store | null>(null)
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [snap, setSnap] = useState<AppSnapshot>(load)
+  const [authReady, setAuthReady] = useState(false)
+  const snapRef = useRef(snap)
+  snapRef.current = snap
+  const revRef = useRef(0)
+  const lastSavedRef = useRef('')
+  const deletedRef = useRef<DeletedIds>({})
+  const persistOnRef = useRef(false)
+  const persistTimer = useRef(0)
+  const persistBusy = useRef(false)
+  const persistAgain = useRef(false)
+  const replaceNext = useRef(false)
+
+  const markDeleted = useCallback((key: keyof DeletedIds, id: string) => {
+    const bag = deletedRef.current
+    bag[key] = [...(bag[key] ?? []), id]
+  }, [])
+
+  const adoptOps = useCallback((revision: number, board: ReturnType<typeof pickOps>, userId?: string) => {
+    revRef.current = revision
+    lastSavedRef.current = JSON.stringify(board)
+    persistOnRef.current = true
+    try {
+      localStorage.removeItem('thalima.crew.v1')
+    } catch {
+      /* private mode */
+    }
+    setSnap((s) => ({ ...s, ...board, ...(userId ? { userId } : {}) }))
+  }, [])
+
+  const flushPersist = useCallback(async () => {
+    if (!persistOnRef.current || !snapRef.current.userId) return
+    if (persistBusy.current) {
+      persistAgain.current = true
+      return
+    }
+    persistBusy.current = true
+    persistAgain.current = false
+    const deleted = deletedRef.current
+    deletedRef.current = {}
+    const replace = replaceNext.current
+    replaceNext.current = false
+    const payload = pickOps(snapRef.current)
+    try {
+      const res = await api.putOps({
+        ...payload,
+        revision: revRef.current,
+        deleted: Object.keys(deleted).length ? deleted : undefined,
+        replace: replace || undefined,
+      })
+      const next = pickOps(res)
+      revRef.current = res.revision
+      lastSavedRef.current = JSON.stringify(next)
+      const local = JSON.stringify(pickOps(snapRef.current))
+      if (local === JSON.stringify(payload) || local === lastSavedRef.current) {
+        setSnap((s) => ({ ...s, ...next }))
+      } else {
+        persistAgain.current = true
+      }
+    } catch {
+      deletedRef.current = { ...deleted, ...deletedRef.current }
+      if (replace) replaceNext.current = true
+      persistAgain.current = true
+    } finally {
+      persistBusy.current = false
+      if (persistAgain.current) void flushPersist()
+    }
+  }, [])
+
+  const schedulePersist = useCallback(() => {
+    window.clearTimeout(persistTimer.current)
+    persistTimer.current = window.setTimeout(() => {
+      void flushPersist()
+    }, 280)
+  }, [flushPersist])
 
   useEffect(() => {
     setSnap((s) => {
@@ -208,34 +280,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    const { userId, weather, ...rest } = snap
-    void weather
-    localStorage.setItem(KEY, JSON.stringify(rest))
-    if (userId) sessionStorage.setItem(SESSION, userId)
-    else sessionStorage.removeItem(SESSION)
-  }, [snap])
+    if (!persistOnRef.current || !snap.userId) return
+    const json = JSON.stringify(pickOps(snap))
+    if (json === lastSavedRef.current) return
+    schedulePersist()
+  }, [snap, schedulePersist])
 
   useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key !== KEY || !e.newValue) return
-      const parsed = JSON.parse(e.newValue) as Partial<AppSnapshot>
-      setSnap((s) => ({
-        ...s,
-        tasks: parsed.tasks ?? s.tasks,
-        messages: keepMessages(parsed.messages ?? s.messages),
-        log: parsed.log ?? s.log,
-        events: parsed.events ?? s.events,
-        systems: parsed.systems ?? s.systems,
-        lastRead: parsed.lastRead ?? s.lastRead,
-        seenNotices: parsed.seenNotices ?? s.seenNotices,
-        theme: parsed.theme ?? s.theme,
-        docs: parsed.docs ?? s.docs,
-        ops: parsed.ops ?? s.ops,
-      }))
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
+    if (!snap.userId) return
+    const tick = window.setInterval(() => {
+      if (!persistOnRef.current || persistBusy.current) return
+      if (JSON.stringify(pickOps(snapRef.current)) !== lastSavedRef.current) return
+      void api
+        .getOps(revRef.current)
+        .then((res) => {
+          if (res.unchanged || persistBusy.current) return
+          if (JSON.stringify(pickOps(snapRef.current)) !== lastSavedRef.current) return
+          adoptOps(res.revision, pickOps(res))
+        })
+        .catch(() => {})
+    }, 2000)
+    return () => window.clearInterval(tick)
+  }, [snap.userId, adoptOps])
 
   useEffect(() => {
     applyHtmlTheme(snap.theme)
@@ -276,6 +342,58 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    let stop = false
+    void (async () => {
+      try {
+        const { user } = await api.me()
+        const { users } = await api.users()
+        if (stop) return
+        setLiveCrew(users)
+        const ops = await api.getOps()
+        if (stop) return
+        if (ops.unchanged) throw new Error('ops')
+        adoptOps(ops.revision, pickOps(ops), user.id)
+      } catch {
+        if (stop) return
+        persistOnRef.current = false
+        resetCrew()
+        setSnap((s) => ({ ...s, userId: null }))
+      } finally {
+        if (!stop) setAuthReady(true)
+      }
+    })()
+    return () => {
+      stop = true
+    }
+  }, [adoptOps])
+
+  const signIn = useCallback(async (email: string, password: string, remember = true) => {
+    try {
+      const { user } = await api.login(email, password, remember)
+      const { users } = await api.users()
+      setLiveCrew(users)
+      try {
+        if (remember) localStorage.setItem(KEEP, user.id)
+        else localStorage.removeItem(KEEP)
+      } catch {
+        /* private mode */
+      }
+      const ops = await api.getOps()
+      if (ops.unchanged) throw new Error('ops')
+      adoptOps(ops.revision, pickOps(ops), user.id)
+      return null
+    } catch (err) {
+      return err instanceof Error ? err.message : 'Sign in failed.'
+    }
+  }, [adoptOps])
+
+  const refreshPeople = useCallback(async () => {
+    const { users } = await api.users()
+    setLiveCrew(users)
+    setSnap((s) => ({ ...s }))
+  }, [])
+
   const login = useCallback((id: string, remember = true) => {
     try {
       if (remember) localStorage.setItem(KEEP, id)
@@ -287,6 +405,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const logout = useCallback(() => {
+    persistOnRef.current = false
+    window.clearTimeout(persistTimer.current)
+    void api.logout().catch(() => {})
+    resetCrew()
     try {
       localStorage.removeItem(KEEP)
     } catch {
@@ -352,6 +474,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         return { ...s, tasks: [task, ...s.tasks] }
       })
+      recordActivity('task_create', input.title)
+      const fromId = snapRef.current.userId
+      if (fromId) {
+        const assigned = input.assigneeIds?.length ? input.assigneeIds : [input.assigneeId]
+        const station = crew.filter((c) => c.id !== fromId && stationsOf(c).includes(input.department)).map((c) => c.id)
+        notifyTaskAssigned({
+          taskId: id,
+          title: input.title,
+          body: input.body,
+          due: input.due,
+          department: input.department,
+          assigneeIds: input.urgency === 'emergency' ? crew.map((c) => c.id) : [...new Set([...assigned, ...station])],
+          fromId,
+        })
+      }
       return id
     },
     [],
@@ -371,6 +508,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const updateTask = useCallback(
     (id: string, patch: Partial<Pick<Task, 'status' | 'urgency' | 'assigneeId' | 'assigneeIds' | 'department' | 'body' | 'title' | 'due' | 'files' | 'kind' | 'awaitReason' | 'dueKind' | 'dueHours' | 'dueAssetId' | 'recur' | 'eventCue' | 'ownerRequest'>>) => {
+      const prev = snapRef.current.tasks.find((t) => t.id === id)
+      const fromId = snapRef.current.userId
       setSnap((s) => ({
         ...s,
         tasks: s.tasks.map((t) => {
@@ -386,10 +525,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             next = withNote(next, taskNote(s.userId, statusLabel[patch.status] ?? patch.status, 'status'))
           }
           if (patch.assigneeIds) {
-            const before = taskAssignees(t).join(',')
-            const after = taskAssignees(next).join(',')
-            if (before !== after) {
-              next = withNote(next, taskNote(s.userId, `Assigned to ${namesFor(taskAssignees(next))}`, 'assign'))
+            const before = taskAssignees(t)
+            const after = taskAssignees(next)
+            if (before.join(',') !== after.join(',')) {
+              next = withNote(next, taskNote(s.userId, `Assigned to ${namesFor(after)}`, 'assign'))
             }
           }
           if (patch.files && (patch.files.length ?? 0) > (t.files?.length ?? 0)) {
@@ -401,6 +540,34 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           return next
         }),
       }))
+      if (!fromId || !prev) return
+      if (patch.assigneeIds) {
+        const before = taskAssignees(prev)
+        const after = [...new Set(patch.assigneeIds)]
+        const added = after.filter((pid) => !before.includes(pid) && pid !== fromId)
+        if (added.length) {
+          notifyTaskAssigned({
+            taskId: id,
+            title: patch.title ?? prev.title,
+            body: patch.body ?? prev.body,
+            due: patch.due ?? prev.due,
+            department: patch.department ?? prev.department,
+            assigneeIds: added,
+            fromId,
+          })
+        }
+      }
+      if (patch.urgency === 'emergency' && prev.urgency !== 'emergency') {
+        notifyTaskAssigned({
+          taskId: id,
+          title: patch.title ?? prev.title,
+          body: patch.body ?? prev.body,
+          due: patch.due ?? prev.due,
+          department: patch.department ?? prev.department,
+          assigneeIds: crew.map((c) => c.id),
+          fromId,
+        })
+      }
     },
     [],
   )
@@ -418,8 +585,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const addMessage = useCallback((channelId: string, text: string) => {
+    const body = text.trim()
+    const fromId = snapRef.current.userId
+    if (!fromId || !body) return
     setSnap((s) => {
-      if (!s.userId || !text.trim()) return s
+      if (!s.userId || !body) return s
       const key = `${s.userId}:${channelId}`
       return {
         ...s,
@@ -429,12 +599,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             id: uid('m'),
             channelId,
             authorId: s.userId,
-            text: text.trim(),
+            text: body,
             at: new Date().toISOString(),
           },
         ],
         lastRead: { ...s.lastRead, [key]: new Date().toISOString() },
       }
+    })
+    notifyChat({
+      channelId,
+      text: body,
+      fromId,
+      toIds: chatRecipients(channelId, fromId),
     })
   }, [])
 
@@ -471,6 +647,36 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const dismissEmergency = useCallback((taskId: string) => {
+    setSnap((s) => {
+      if (!s.userId) return s
+      const key = emergencyDismissKey(s.userId, taskId)
+      const dismissed = s.dismissedEmergencies ?? {}
+      if (dismissed[key]) return s
+      return {
+        ...s,
+        dismissedEmergencies: { ...dismissed, [key]: new Date().toISOString() },
+      }
+    })
+  }, [])
+
+  const claimEmergency = useCallback((taskId: string) => {
+    setSnap((s) => {
+      if (!s.userId) return s
+      return {
+        ...s,
+        tasks: s.tasks.map((t) => {
+          if (t.id !== taskId || t.status === 'done') return t
+          const ids = [...taskAssignees(t)]
+          if (!ids.includes(s.userId!)) ids.push(s.userId!)
+          let next: Task = { ...t, assigneeIds: ids, assigneeId: ids[0] ?? t.assigneeId }
+          if (next.status !== 'doing') next = punchStatus(next, 'doing')
+          return withNote(next, taskNote(s.userId!, 'Took on emergency', 'assign'))
+        }),
+      }
+    })
+  }, [])
+
   const addLog = useCallback((text: string) => {
     setSnap((s) => {
       if (!s.userId || !text.trim()) return s
@@ -487,6 +693,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         ],
       }
     })
+    if (text.trim()) recordActivity('deck_log', text.trim())
   }, [])
 
   const addEvent = useCallback((input: { title: string; body: string; role: CalRole; start: string; end: string }) => {
@@ -506,16 +713,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const removeEvent = useCallback((id: string) => {
+    markDeleted('events', id)
     setSnap((s) => ({ ...s, events: s.events.filter((e) => e.id !== id) }))
-  }, [])
+  }, [markDeleted])
 
   const addDoc = useCallback((doc: CloudDoc) => {
     setSnap((s) => ({ ...s, docs: [doc, ...(s.docs ?? [])] }))
   }, [])
 
   const removeDoc = useCallback((id: string) => {
+    markDeleted('docs', id)
     setSnap((s) => ({ ...s, docs: (s.docs ?? []).filter((d) => d.id !== id) }))
-  }, [])
+  }, [markDeleted])
 
   const patchOps = useCallback((fn: (ops: OpsState) => OpsState) => {
     setSnap((s) => ({ ...s, ops: fn(s.ops) }))
@@ -592,6 +801,45 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const addStockItem = useCallback(
+    (input: { kind: 'technical'; row: Omit<StockItem, 'id'> } | { kind: 'provisioning'; row: Omit<ProvisionItem, 'id'> }) => {
+      if (input.kind === 'technical') {
+        const row = { ...input.row, id: uid('st') }
+        patchOps((ops) => ({ ...ops, stock: [...(ops.stock ?? []), row] }))
+      } else {
+        const row = { ...input.row, id: uid('pv') }
+        patchOps((ops) => ({ ...ops, provisions: [...ops.provisions, row] }))
+      }
+      recordActivity('stock_add', `Added ${input.row.item}`)
+    },
+    [patchOps],
+  )
+
+  const addPurchase = useCallback(
+    (input: Pick<PurchaseRequest, 'title' | 'supplier' | 'amount' | 'currency' | 'category' | 'note'>) => {
+      setSnap((s) => {
+        if (!s.userId) return s
+        const row: PurchaseRequest = {
+          ...input,
+          id: uid('pr'),
+          status: 'pending',
+          by: s.userId,
+          at: new Date().toISOString(),
+        }
+        return { ...s, ops: { ...s.ops, purchases: [row, ...s.ops.purchases] } }
+      })
+      recordActivity('purchase_add', `Requested ${input.title}`)
+    },
+    [],
+  )
+
+  const addTrip = useCallback((input: Omit<Trip, 'id' | 'prepped'>) => {
+    const id = uid('trip')
+    patchOps((ops) => ({ ...ops, trips: [...ops.trips, { ...input, id }].sort((a, b) => a.from.localeCompare(b.from)) }))
+    recordActivity('trip_add', `Added event ${input.title}`)
+    return id
+  }, [patchOps])
+
   const setTripPrepped = useCallback((id: string) => {
     patchOps((ops) => ({
       ...ops,
@@ -599,10 +847,377 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }))
   }, [patchOps])
 
+  const addReceipt = useCallback((file: AttachedFile) => {
+    const id = uid('ex')
+    setSnap((s) => {
+      if (!s.userId) return s
+      const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
+      const list = s.expenses ?? expensesSeed()
+      const draft = emptyDraftExpense(s.userId, nextExpenseRef(list), 'receipt')
+      draft.id = id
+      draft.receipt = file
+      draft.notes = [expenseAudit(s.userId, 'uploaded', `Uploaded by ${who}`)]
+      return { ...s, expenses: [draft, ...list] }
+    })
+    return id
+  }, [])
+
+  const addManualExpense = useCallback(
+    (input: {
+      vendor: string
+      date: string
+      amount: number
+      currency: string
+      eurAmount: number
+      vat: number | null
+      category: ExpenseCategory
+      description: string
+      receipt?: AttachedFile
+      approverId: string
+    }) => {
+      let created = uid('ex')
+      const existing = snapRef.current.expenses ?? expensesSeed()
+      const ref = nextExpenseRef(existing)
+      setSnap((s) => {
+        if (!s.userId) return s
+        const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
+        const list = s.expenses ?? expensesSeed()
+        const draft = emptyDraftExpense(s.userId, ref, 'manual')
+        const next: Expense = {
+          ...draft,
+          id: created,
+          vendor: input.vendor.trim(),
+          date: input.date,
+          amount: input.amount,
+          currency: input.currency,
+          eurAmount: input.eurAmount,
+          vat: input.vat,
+          category: input.category,
+          description: input.description.trim(),
+          receipt: input.receipt,
+          approverId: input.approverId,
+          status: 'pending',
+          extraction: {
+            completed: false,
+            confidence: {
+              vendor: 'ok',
+              date: 'ok',
+              amount: 'ok',
+              currency: 'ok',
+              eurAmount: 'ok',
+              category: 'ok',
+              description: input.description.trim() ? 'ok' : 'missing',
+              vat: input.vat != null ? 'ok' : 'missing',
+              invoiceNo: 'missing',
+            },
+          },
+          notes: [
+            expenseAudit(s.userId, 'created', `Manual expense by ${who}`),
+            expenseAudit(s.userId, 'submitted', `Submitted for approval`),
+          ],
+        }
+        return { ...s, expenses: [next, ...list] }
+      })
+      const fromId = snapRef.current.userId
+      if (fromId) {
+        notifyExpenseApproval({
+          expenseId: created,
+          ref,
+          vendor: input.vendor.trim(),
+          amount: new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'EUR' }).format(input.eurAmount),
+          category: expenseCategoryLabel[input.category],
+          description: input.description.trim(),
+          approverId: input.approverId,
+          fromId,
+        })
+      }
+      return created
+    },
+    [],
+  )
+
+  const updateExpense = useCallback(
+    (
+      id: string,
+      patch: Partial<
+        Pick<
+          Expense,
+          | 'vendor'
+          | 'date'
+          | 'category'
+          | 'amount'
+          | 'currency'
+          | 'eurAmount'
+          | 'vat'
+          | 'invoiceNo'
+          | 'description'
+          | 'place'
+          | 'paymentMethod'
+          | 'approverId'
+          | 'receipt'
+        >
+      >,
+    ) => {
+      setSnap((s) => {
+        if (!s.userId) return s
+        const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
+        return {
+          ...s,
+          expenses: (s.expenses ?? expensesSeed()).map((exp) => {
+            if (exp.id !== id) return exp
+            const next = { ...exp, ...patch }
+            if (next.currency === 'EUR' && next.amount != null) next.eurAmount = next.amount
+            const confidence = { ...next.extraction.confidence }
+            ;(
+              [
+                'vendor',
+                'date',
+                'amount',
+                'currency',
+                'eurAmount',
+                'vat',
+                'invoiceNo',
+                'category',
+                'description',
+              ] as const
+            ).forEach((field) => {
+              if (field in patch) {
+                const value = next[field]
+                const filled = value !== '' && value !== null && value !== undefined
+                confidence[field] = filled ? 'ok' : 'missing'
+              }
+            })
+            const last = next.notes[next.notes.length - 1]
+            const note = expenseAudit(s.userId!, 'edited', `Edited by ${who}`)
+            const notes =
+              last?.action === 'edited' && last.authorId === s.userId
+                ? [...next.notes.slice(0, -1), { ...last, at: note.at }]
+                : [...next.notes, note]
+            return {
+              ...next,
+              extraction: { ...next.extraction, confidence },
+              notes,
+            }
+          }),
+        }
+      })
+    },
+    [],
+  )
+
+  const submitExpense = useCallback((id: string) => {
+    const fromId = snapRef.current.userId
+    const exp = (snapRef.current.expenses ?? expensesSeed()).find((e) => e.id === id)
+    if (!fromId || !exp || exp.status !== 'draft') return
+    if (missingExpenseFields(exp).length) return
+    const approverId = exp.approverId ?? defaultApproverId(fromId)
+    if (!approverId) return
+    setSnap((s) => {
+      if (!s.userId) return s
+      return {
+        ...s,
+        expenses: (s.expenses ?? expensesSeed()).map((row) => {
+          if (row.id !== id) return row
+          return {
+            ...row,
+            status: 'pending' as ExpenseStatus,
+            approverId,
+            notes: [...row.notes, expenseAudit(s.userId!, 'submitted', 'Submitted for approval')],
+          }
+        }),
+      }
+    })
+    recordActivity('expense_submit', 'Submitted an expense for approval')
+    notifyExpenseApproval(expenseMailFrom({ ...exp, status: 'pending', approverId }, fromId))
+  }, [])
+
+  const approveExpense = useCallback((id: string) => {
+    setSnap((s) => {
+      if (!s.userId) return s
+      const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
+      const now = new Date().toISOString()
+      return {
+        ...s,
+        expenses: (s.expenses ?? expensesSeed()).map((exp) => {
+          if (exp.id !== id) return exp
+          if (exp.uploadedBy === s.userId) return exp
+          return {
+            ...exp,
+            status: 'approved' as ExpenseStatus,
+            approvedBy: s.userId ?? undefined,
+            approvedAt: now,
+            notes: [...exp.notes, expenseAudit(s.userId!, 'approved', `Approved by ${who}`)],
+          }
+        }),
+      }
+    })
+    recordActivity('expense_approve', 'Approved an expense')
+  }, [])
+
+  const rejectExpense = useCallback((id: string) => {
+    setSnap((s) => {
+      if (!s.userId) return s
+      const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
+      return {
+        ...s,
+        expenses: (s.expenses ?? expensesSeed()).map((exp) => {
+          if (exp.id !== id) return exp
+          if (exp.uploadedBy === s.userId) return exp
+          return {
+            ...exp,
+            status: 'rejected' as ExpenseStatus,
+            approvedBy: s.userId ?? undefined,
+            notes: [...exp.notes, expenseAudit(s.userId!, 'rejected', `Rejected by ${who}`)],
+          }
+        }),
+      }
+    })
+    recordActivity('expense_reject', 'Rejected an expense')
+  }, [])
+
+  const addRosterRequest = useCallback(
+    (input: {
+      crewId: string
+      from: string
+      to: string
+      kind: RosterKind
+      reason: AbsenceReason
+      comment: string
+    }) => {
+      const id = uid('rs')
+      setSnap((s) => {
+        if (!s.userId) return s
+        const from = input.from <= input.to ? input.from : input.to
+        const to = input.from <= input.to ? input.to : input.from
+        const admin = crew.find((c) => c.id === s.userId)
+        const forSelf = input.crewId === s.userId
+        const auto = Boolean(admin && (admin.level === 1 || admin.role === 'captain') && !forSelf)
+        const now = new Date().toISOString()
+        const row: RosterEntry = {
+          id,
+          crewId: input.crewId,
+          from,
+          to,
+          kind: input.kind,
+          presence: presenceOf(input.kind, input.reason),
+          duty: dutyOf(input.kind, input.reason),
+          reason: input.reason,
+          comment: input.comment.trim(),
+          status: auto ? 'approved' : 'pending',
+          requestedBy: s.userId,
+          requestedAt: now,
+          decidedBy: auto ? s.userId : undefined,
+          decidedAt: auto ? now : undefined,
+          notes: [
+            rosterAudit(s.userId, auto ? 'admin_change' : 'created', auto ? 'Admin change' : 'Request created'),
+          ],
+        }
+        return { ...s, roster: [row, ...(s.roster ?? rosterSeed())] }
+      })
+      return id
+    },
+    [],
+  )
+
+  const decideRoster = useCallback((id: string, decision: 'approved' | 'rejected') => {
+    setSnap((s) => {
+      if (!s.userId) return s
+      const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
+      const now = new Date().toISOString()
+      return {
+        ...s,
+        roster: (s.roster ?? rosterSeed()).map((row) => {
+          if (row.id !== id || row.status !== 'pending') return row
+          if (row.requestedBy === s.userId || row.crewId === s.userId) return row
+          return {
+            ...row,
+            status: decision,
+            decidedBy: s.userId ?? undefined,
+            decidedAt: now,
+            notes: [
+              ...row.notes,
+              rosterAudit(
+                s.userId!,
+                decision === 'approved' ? 'approved' : 'rejected',
+                decision === 'approved' ? `Approved by ${who}` : `Rejected by ${who}`,
+              ),
+            ],
+          }
+        }),
+      }
+    })
+    recordActivity('roster_decide', decision === 'approved' ? 'Approved a roster request' : 'Rejected a roster request')
+  }, [])
+
+  const setMyStatus = useCallback((status: SelfStatus) => {
+    setSnap((s) => {
+      if (!s.userId) return s
+      const me = s.userId
+      const day = romeDay()
+      const now = new Date().toISOString()
+      const note = rosterAudit(me, 'admin_change', `Status set to ${selfStatusLabel[status]}`)
+      const list: RosterEntry[] = []
+      for (const row of s.roster ?? rosterSeed()) {
+        const covers = row.crewId === me && row.status === 'approved' && row.from <= day && row.to >= day
+        if (!covers) {
+          list.push(row)
+          continue
+        }
+        if (row.from < day) list.push({ ...row, to: addDays(day, -1), notes: [...row.notes, note] })
+        if (row.to > day) list.push({ ...row, id: uid('rs'), from: addDays(day, 1), notes: [...row.notes, note] })
+        if (row.from === day && row.to === day) list.push({ ...row, status: 'cancelled', notes: [...row.notes, note] })
+      }
+      if (status === 'working') return { ...s, roster: list }
+      const reason = status === 'sick' ? 'medical' : 'other'
+      const row: RosterEntry = {
+        id: uid('rs'),
+        crewId: me,
+        from: day,
+        to: day,
+        kind: status,
+        presence: presenceOf(status, reason),
+        duty: status === 'offboard' ? 'working' : dutyOf(status, reason),
+        reason,
+        comment: '',
+        status: 'approved',
+        requestedBy: me,
+        requestedAt: now,
+        decidedBy: me,
+        decidedAt: now,
+        source: 'status',
+        notes: [note],
+      }
+      return { ...s, roster: [row, ...list] }
+    })
+    recordActivity('roster_status', `Status set to ${selfStatusLabel[status]}`)
+  }, [])
+
+  const cancelRoster = useCallback((id: string) => {
+    setSnap((s) => {
+      if (!s.userId) return s
+      const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
+      return {
+        ...s,
+        roster: (s.roster ?? rosterSeed()).map((row) => {
+          if (row.id !== id) return row
+          if (row.status !== 'pending') return row
+          if (row.requestedBy !== s.userId && row.crewId !== s.userId) return row
+          return {
+            ...row,
+            status: 'cancelled' as const,
+            notes: [...row.notes, rosterAudit(s.userId!, 'cancelled', `Cancelled by ${who}`)],
+          }
+        }),
+      }
+    })
+  }, [])
+
   const reset = useCallback(() => {
     const next = seed()
     next.theme = snap.theme
     next.userId = snap.userId
+    replaceNext.current = true
+    lastSavedRef.current = ''
     setSnap(next)
   }, [snap.theme, snap.userId])
 
@@ -615,6 +1230,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       docs: snap.docs ?? [],
       ops: snap.ops ?? opsSeed(),
       seenNotices: snap.seenNotices ?? {},
+      dismissedEmergencies: snap.dismissedEmergencies ?? {},
+      expenses: snap.expenses ?? expensesSeed(),
+      roster: snap.roster ?? rosterSeed(),
+      authReady,
+      signIn,
+      refreshPeople,
       login,
       logout,
       setTheme,
@@ -626,6 +1247,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       markRead,
       markTasksSeen,
       markNoticeSeen,
+      dismissEmergency,
+      claimEmergency,
       addLog,
       addEvent,
       removeEvent,
@@ -635,10 +1258,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addHandover,
       addDrill,
       setTripPrepped,
+      addTrip,
+      addStockItem,
+      addPurchase,
+      addReceipt,
+      addManualExpense,
+      updateExpense,
+      submitExpense,
+      approveExpense,
+      rejectExpense,
+      addRosterRequest,
+      decideRoster,
+      setMyStatus,
+      cancelRoster,
       reset,
       user,
     }),
-    [snap, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, addDrill, setTripPrepped, reset, user],
+    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, addDrill, setTripPrepped, addTrip, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

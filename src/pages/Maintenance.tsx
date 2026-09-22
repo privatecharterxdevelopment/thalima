@@ -40,10 +40,6 @@ export function Maintenance() {
   return (
     <div className="pad inv">
       <div className="inv-head">
-        <div>
-          <p className="inv-kicker">Plant</p>
-          <p className="inv-copy">Hours, service, defects, and the spares that keep her running.</p>
-        </div>
         <SectionTabs value={tab} onChange={(id) => setParams({ tab: id })} tabs={[...tabs]} />
       </div>
 

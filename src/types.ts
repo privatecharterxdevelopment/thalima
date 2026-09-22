@@ -12,6 +12,27 @@ export type Role =
   | 'chef'
   | 'sous'
 export type Level = 1 | 2 | 3
+export type AccountingRole = 'none' | 'submitter' | 'accountant' | 'captain'
+export type Access = 'owner' | 'crew'
+export type ExpenseStatus = 'draft' | 'pending' | 'approved' | 'rejected'
+export type ExpenseSource = 'receipt' | 'manual'
+export type ExpenseCategory =
+  | 'fuel'
+  | 'marina'
+  | 'guest_fnb'
+  | 'crew_food'
+  | 'maintenance'
+  | 'spares'
+  | 'deck'
+  | 'interior'
+  | 'laundry'
+  | 'transport'
+  | 'travel'
+  | 'agency'
+  | 'comms'
+  | 'medical'
+  | 'insurance'
+  | 'other'
 export type Department = 'bridge' | 'engineering' | 'interior' | 'galley' | 'deck'
 export type Urgency = 'routine' | 'soon' | 'now' | 'emergency'
 export type TaskStatus = 'open' | 'doing' | 'waiting' | 'done'
@@ -39,13 +60,17 @@ export type CrewMember = {
   title: string
   role: Role
   department: Department
+  departments?: Department[]
   level: Level
+  accounting: AccountingRole
   initials: string
   watch: string
   online: boolean
   email: string
   phone: string
   photo: string
+  access?: Access
+  active?: boolean
 }
 
 export type AttachedFile = {
@@ -249,6 +274,41 @@ export type Certificate = {
 
 export type LeaveKind = 'leave' | 'rotation' | 'offsign'
 
+export type Presence = 'onboard' | 'offboard'
+export type DutyStatus = 'working' | 'off_duty' | 'leave' | 'sick' | 'travel' | 'training'
+export type RosterKind = 'offboard' | 'off_duty' | 'leave' | 'sick' | 'travel' | 'training'
+export type AbsenceReason = 'leave' | 'personal' | 'travel' | 'medical' | 'other'
+export type RosterDecision = 'pending' | 'approved' | 'rejected' | 'cancelled'
+
+export type RosterAudit = {
+  id: string
+  at: string
+  authorId: string
+  action: 'created' | 'edited' | 'approved' | 'rejected' | 'cancelled' | 'admin_change'
+  text: string
+}
+
+export type RosterEntry = {
+  id: string
+  crewId: string
+  from: string
+  to: string
+  kind: RosterKind
+  presence: Presence
+  duty: DutyStatus
+  reason: AbsenceReason
+  comment: string
+  status: RosterDecision
+  requestedBy: string
+  requestedAt: string
+  decidedBy?: string
+  decidedAt?: string
+  source?: 'status'
+  notes: RosterAudit[]
+}
+
+export type SelfStatus = 'working' | 'off_duty' | 'offboard' | 'sick'
+
 export type LeaveRow = {
   id: string
   crewId: string
@@ -362,6 +422,76 @@ export type OpsState = {
   contacts: DirectoryContact[]
   drills: Drill[]
   trips: Trip[]
+  stock?: StockItem[]
+}
+
+export type StockItem = {
+  id: string
+  dept: Department
+  item: string
+  stock: number
+  min: number
+  unit: string
+  note: string
+}
+
+export type ExpenseField =
+  | 'vendor'
+  | 'date'
+  | 'amount'
+  | 'currency'
+  | 'eurAmount'
+  | 'vat'
+  | 'invoiceNo'
+  | 'category'
+  | 'description'
+
+export type FieldConfidence = 'ok' | 'low' | 'missing'
+
+export type ExpenseAudit = {
+  id: string
+  at: string
+  authorId: string
+  action:
+    | 'uploaded'
+    | 'created'
+    | 'extracted'
+    | 'category_suggested'
+    | 'edited'
+    | 'submitted'
+    | 'approved'
+    | 'rejected'
+  text: string
+}
+
+export type Expense = {
+  id: string
+  ref: string
+  source: ExpenseSource
+  vendor: string
+  title?: string
+  date: string
+  category: ExpenseCategory | ''
+  amount: number | null
+  currency: string
+  eurAmount: number | null
+  vat: number | null
+  invoiceNo: string
+  description: string
+  place: string
+  paymentMethod: string
+  status: ExpenseStatus
+  uploadedBy: string
+  uploadedAt: string
+  approverId: string | null
+  approvedBy?: string
+  approvedAt?: string
+  receipt?: AttachedFile
+  extraction: {
+    completed: boolean
+    confidence: Partial<Record<ExpenseField, FieldConfidence>>
+  }
+  notes: ExpenseAudit[]
 }
 
 export type AppSnapshot = {
@@ -374,7 +504,10 @@ export type AppSnapshot = {
   systems: Systems
   lastRead: Record<string, string>
   seenNotices: Record<string, string>
+  dismissedEmergencies: Record<string, string>
   weather: WeatherNow | null
   docs: CloudDoc[]
   ops: OpsState
+  expenses: Expense[]
+  roster: RosterEntry[]
 }

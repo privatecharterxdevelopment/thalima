@@ -47,10 +47,6 @@ export function Cloud() {
   return (
     <div className="pad cloud">
       <div className="inv-head">
-        <div>
-          <p className="inv-kicker">Papers</p>
-          <p className="inv-copy">The ship’s file, class, manuals, invoices, contracts, and who we call.</p>
-        </div>
         <SectionTabs value={tab} onChange={(id) => setParams({ tab: id })} tabs={[...tabs]} />
       </div>
 

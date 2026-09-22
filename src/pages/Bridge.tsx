@@ -1,12 +1,15 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { NavWidget } from '../components/NavWidget'
-import { Avatar } from '../components/Avatar'
+import { WhoLine } from '../components/WhoLine'
+import { StatusPill, statusTone } from '../components/StatusPill'
 import { useUi } from '../ui'
 import { useStore } from '../store'
-import { clock, isMarkedOn, taskAssignees } from '../lib/format'
+import { clock, dueLine, isMarkedOn, onStation, sortTasks, taskAssignees } from '../lib/format'
 import { eventsOnDay, sameDay } from '../lib/cal'
-import { crew, deptLabel, statusLabel } from '../data/crew'
-import { buildAlerts } from '../lib/alerts'
+import { calRoleLabel, crew, deptLabel } from '../data/crew'
+import { isOpenStatus } from '../lib/opsTasks'
+import type { CrewMember, Task } from '../types'
 
 function weekDays() {
   const now = new Date()
@@ -20,10 +23,29 @@ function weekDays() {
   })
 }
 
+function onHomeBoard(user: CrewMember, task: Task) {
+  return isMarkedOn(task, user.id) || onStation(user, task.department) || task.createdBy === user.id
+}
+
+function peopleOf(task: Task) {
+  return taskAssignees(task)
+    .map((id) => crew.find((c) => c.id === id))
+    .filter((who): who is CrewMember => Boolean(who))
+}
+
+function tripCovers(trip: { from: string; to: string }, day: Date) {
+  const from = new Date(trip.from)
+  const to = new Date(trip.to)
+  from.setHours(0, 0, 0, 0)
+  to.setHours(23, 59, 59, 999)
+  return day.getTime() >= from.getTime() && day.getTime() <= to.getTime()
+}
+
 export function Bridge() {
-  const { user, tasks, events, systems, ops } = useStore()
+  const { user, tasks, events, ops } = useStore()
   const { navFull } = useUi()
   const nav = useNavigate()
+  const [picked, setPicked] = useState(() => new Date())
   if (!user) return null
 
   if (navFull) {
@@ -34,132 +56,169 @@ export function Bridge() {
     )
   }
 
-  const assigned = tasks
-    .filter((t) => t.status !== 'done' && isMarkedOn(t, user.id))
-    .sort((a, b) => new Date(a.due).getTime() - new Date(b.due).getTime())
-  const live =
-    assigned.filter((t) => t.status === 'doing').sort((a, b) => new Date(a.due).getTime() - new Date(b.due).getTime())[0] ??
-    assigned[0]
-  const people = live
-    ? taskAssignees(live)
-        .map((id) => crew.find((c) => c.id === id))
-        .filter(Boolean)
-    : []
+  const visible = tasks
+    .filter((t) => isOpenStatus(t.status) && onHomeBoard(user, t))
+    .sort(sortTasks)
+  const mine = visible.filter((t) => isMarkedOn(t, user.id))
+  const team = visible.filter((t) => !isMarkedOn(t, user.id))
+  const overdue = visible.filter((t) => new Date(t.due).getTime() < Date.now()).length
+  const trip = ops.trips.find((t) => tripCovers(t, new Date()))
   const days = weekDays()
-  const today = new Date()
-  const upcomingEvent = [...events]
-    .filter((e) => new Date(e.end).getTime() >= Date.now())
-    .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())[0]
-  const alerts = buildAlerts({ tasks, ops, systems })
+  const dayEvents = eventsOnDay(events, picked).sort(
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
+  )
+  const tripOnDay = ops.trips.find((t) => t.guests.length > 0 && tripCovers(t, picked))
+  const pickedLabel = picked.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'Europe/Rome',
+  })
 
   return (
     <div className="home">
       <div className="home-stage">
-        <section className="home-nav">
-          <NavWidget variant="window" />
+        <div className="home-chips">
+          <button type="button" onClick={() => nav('/board')}>
+            <b>{mine.length}</b>
+            Mine
+          </button>
+          <button type="button" onClick={() => nav('/board')}>
+            <b>{visible.length}</b>
+            On the board
+          </button>
+          <button type="button" className={overdue ? 'is-hot' : ''} onClick={() => nav('/board')}>
+            <b>{overdue}</b>
+            Overdue
+          </button>
+          {trip ? (
+            <button type="button" onClick={() => nav('/calendar?tab=trips')}>
+              <b>{trip.guests.length}</b>
+              Guests aboard
+              <em>{trip.title}</em>
+            </button>
+          ) : null}
+        </div>
+
+        <section className="home-card home-board">
+          <header className="home-card-head">
+            <h2>Crew tasks</h2>
+            <button type="button" className="home-see" onClick={() => nav('/board')}>
+              See all
+            </button>
+          </header>
+          {team.length === 0 ? (
+            <p className="home-empty">Nothing open for the rest of the crew.</p>
+          ) : (
+            <div className="home-table">
+              <div className="home-thead">
+                <span>Task</span>
+                <span>Station</span>
+                <span>Assign</span>
+                <span>Status</span>
+              </div>
+              {team.slice(0, 12).map((t) => (
+                <button key={t.id} type="button" className="home-trow" onClick={() => nav(`/board/${t.id}`)}>
+                  <span className="home-tname">
+                    {t.title}
+                    <small>{dueLine(t.due)}</small>
+                  </span>
+                  <span className="home-tmeta">{deptLabel[t.department]}</span>
+                  <span className="home-twho">
+                    <WhoLine people={peopleOf(t)} />
+                  </span>
+                  <span className="home-tstatus">
+                    <StatusPill status={t.status} tone={statusTone(t)} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
 
-        <button
-          className="glass-card apple-widget home-live"
-          type="button"
-          onClick={() => (live ? nav(`/board/${live.id}`) : nav('/board'))}
-        >
-          <div className="apple-kicker">
-            <span>{live ? statusLabel[live.status] : 'Now'}</span>
-            {live ? <em>{clock(live.due)}</em> : null}
-          </div>
-          {live ? (
-            <div className="live-body">
-              <h2>{live.title}</h2>
-              <p>{live.body}</p>
-              <small>
-                {deptLabel[live.department]}
-                {new Date(live.due).getTime() < Date.now() ? ' · Overdue' : ''}
-              </small>
-              <ul className="live-who">
-                {people.map((who) => (
-                  <li key={who!.id}>
-                    <Avatar person={who!} />
-                    <div>
-                      <b>{who!.name}</b>
-                      <span>{who!.title}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+        <section className="home-card home-mine">
+          <header className="home-card-head">
+            <h2>My tasks</h2>
+            <em>{mine.length}</em>
+          </header>
+          {mine.length === 0 ? (
+            <div className="home-clear">
+              <strong>No pending tasks for you.</strong>
+              <span>Nothing is assigned to {user.name.split(' ')[0]} right now.</span>
             </div>
           ) : (
-            <p className="apple-empty">Nothing on the board.</p>
-          )}
-        </button>
-
-        <button className="glass-card apple-widget" type="button" onClick={() => nav('/calendar')}>
-          <div className="apple-kicker">
-            <span>Diary</span>
-          </div>
-          <div className="week-strip">
-            {days.map((d) => {
-              const on = sameDay(d, today)
-              const has = eventsOnDay(events, d).length > 0
-              return (
-                <span key={d.toISOString()} className={`week-day ${on ? 'is-today' : ''} ${has ? 'has-event' : ''}`}>
-                  {d.toLocaleDateString('en-GB', { weekday: 'narrow', timeZone: 'Europe/Rome' })}
-                  <b>{d.getDate()}</b>
-                  {has ? <i /> : <i className="is-blank" />}
-                </span>
-              )
-            })}
-          </div>
-          {upcomingEvent ? (
-            <p className="week-next">
-              <time>{clock(upcomingEvent.start)}</time>
-              {upcomingEvent.title}
-            </p>
-          ) : (
-            <p className="apple-empty">Nothing in the diary.</p>
-          )}
-        </button>
-
-        <button
-          className={`glass-card apple-widget home-tasks ${assigned.length ? 'is-pending' : 'is-clear'}`}
-          type="button"
-          onClick={() => nav('/board')}
-        >
-          <div className="apple-kicker">
-            <span>Tasks</span>
-            <em>{assigned.length}</em>
-          </div>
-          {assigned.length === 0 ? (
-            <p className="apple-empty">No pending tasks</p>
-          ) : (
-            <ul className="apple-tasks">
-              {assigned.map((t) => (
+            <ul className="home-mine-list">
+              {mine.map((t) => (
                 <li key={t.id}>
-                  <i className={`apple-ring is-${t.urgency}`} />
-                  <span>{t.title}</span>
+                  <button type="button" onClick={() => nav(`/board/${t.id}`)}>
+                    <span>
+                      <strong>{t.title}</strong>
+                      <small>
+                        {dueLine(t.due)} · {deptLabel[t.department]}
+                      </small>
+                    </span>
+                    <StatusPill status={t.status} tone={statusTone(t)} />
+                  </button>
                 </li>
               ))}
             </ul>
           )}
-        </button>
+        </section>
 
-        <section className="glass-card apple-widget apple-alerts">
-          <div className="apple-kicker">
-            <span>Alerts</span>
+        <section className="home-card home-diary">
+          <header className="home-card-head">
+            <h2>Schedule</h2>
+            <button type="button" className="home-see" onClick={() => nav('/calendar')}>
+              Open diary
+            </button>
+          </header>
+          <div className="home-week">
+            {days.map((d) => {
+              const on = sameDay(d, picked)
+              const has = eventsOnDay(events, d).length > 0
+              return (
+                <button
+                  key={d.toISOString()}
+                  type="button"
+                  className={`${on ? 'is-on' : ''} ${sameDay(d, new Date()) ? 'is-today' : ''}`}
+                  onClick={() => setPicked(d)}
+                >
+                  <small>{d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'Europe/Rome' })}</small>
+                  <b>{d.toLocaleDateString('en-GB', { day: 'numeric', timeZone: 'Europe/Rome' })}</b>
+                  <i className={has ? '' : 'is-blank'} />
+                </button>
+              )
+            })}
           </div>
-          <div className="alert-list">
-            {alerts.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                className={`alert-row ${a.tone === 'hot' ? 'is-hot' : a.tone === 'soon' ? 'is-soon' : ''}`}
-                onClick={() => nav(a.to)}
-              >
-                <b>{a.count}</b>
-                <span>{a.label}</span>
-              </button>
-            ))}
-          </div>
+          <p className="home-day">{pickedLabel}</p>
+          {dayEvents.length === 0 && !tripOnDay ? (
+            <p className="home-empty">Nothing in the diary.</p>
+          ) : (
+            <ul className="home-events">
+              {tripOnDay ? (
+                <li className="is-guests">
+                  <button type="button" onClick={() => nav('/calendar?tab=trips')}>
+                    <strong>{tripOnDay.title}</strong>
+                    <small>{tripOnDay.guests.map((g) => g.name).join(' · ')}</small>
+                  </button>
+                </li>
+              ) : null}
+              {dayEvents.map((e) => (
+                <li key={e.id} className={`is-${e.role}`}>
+                  <button type="button" onClick={() => nav('/calendar')}>
+                    <strong>{e.title}</strong>
+                    <small>
+                      {clock(e.start)} – {clock(e.end)} · {calRoleLabel[e.role]}
+                    </small>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="home-nav">
+          <NavWidget variant="window" />
         </section>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { crew, deptLabel, statusLabel } from '../data/crew'
-import { canSeeTask, sortTasks, taskAssignees } from '../lib/format'
+import { canSeeTask, sortTasks, stationsOf, taskAssignees } from '../lib/format'
 import { isOpenStatus } from '../lib/opsTasks'
 import { useStore } from '../store'
 import { TaskCard } from '../components/TaskCard'
@@ -40,7 +40,8 @@ export function Board() {
 
   if (!user) return null
 
-  const deptOpts: Array<Department | 'all'> = user.level === 1 ? deptsAll : ['all', user.department]
+  const deptOpts: Array<Department | 'all'> =
+    user.level === 1 ? deptsAll : ['all', ...stationsOf(user).filter((d, i, all) => all.indexOf(d) === i)]
   const canCreate = user.level <= 2
   const defects = ops.defects.filter((d) => d.status !== 'closed')
   const defectList = defects.filter((d) => {
@@ -122,32 +123,34 @@ export function Board() {
               const hasTask = tasks.some((t) => t.kind === 'defect' && t.title === d.title)
               return (
                 <article key={d.id} className="task ops-card">
-                  <h3>{d.title}</h3>
-                  <p className="ops-meta">
-                    {who?.name.split(' ')[0] ?? 'Engineering'}
-                    {eq ? ` · ${deptLabel[eq.department]}` : ''}
-                    {` · ${d.status === 'open' ? 'Open' : 'On watch'}`}
-                  </p>
-                  {canCreate && !hasTask && (
-                    <button
-                      className="btn ghost"
-                      type="button"
-                      onClick={() =>
-                        addTask({
-                          title: d.title,
-                          body: d.body,
-                          department: eq?.department ?? 'engineering',
-                          assigneeId: who?.id ?? 'marco',
-                          urgency: d.status === 'open' ? 'now' : 'soon',
-                          due: new Date(Date.now() + 4 * 3600_000).toISOString(),
-                          kind: 'defect',
-                          awaitReason: d.id === 'df2' ? 'spare' : undefined,
-                        })
-                      }
-                    >
-                      Make task
-                    </button>
-                  )}
+                  <div>
+                    <h3>{d.title}</h3>
+                    <p className="ops-meta">
+                      {who?.name.split(' ')[0] ?? 'Engineering'}
+                      {eq ? ` · ${deptLabel[eq.department]}` : ''}
+                      {` · ${d.status === 'open' ? 'Open' : 'On watch'}`}
+                    </p>
+                    {canCreate && !hasTask && (
+                      <button
+                        className="btn ghost"
+                        type="button"
+                        onClick={() =>
+                          addTask({
+                            title: d.title,
+                            body: d.body,
+                            department: eq?.department ?? 'engineering',
+                            assigneeId: who?.id ?? 'marco',
+                            urgency: d.status === 'open' ? 'now' : 'soon',
+                            due: new Date(Date.now() + 4 * 3600_000).toISOString(),
+                            kind: 'defect',
+                            awaitReason: d.id === 'df2' ? 'spare' : undefined,
+                          })
+                        }
+                      >
+                        Make task
+                      </button>
+                    )}
+                  </div>
                 </article>
               )
             })

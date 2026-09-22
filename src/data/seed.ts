@@ -1,5 +1,7 @@
 import { systemsSeed } from './crew'
 import { opsSeed } from './ops'
+import { expensesSeed } from './accounting'
+import { rosterSeed } from './roster'
 import type { AppSnapshot, CalEvent, ChatMessage, CloudDoc, LogEntry, Task } from '../types'
 
 function iso(hoursFromNow: number) {
@@ -450,6 +452,9 @@ export function seed(): AppSnapshot {
     systems: { ...systemsSeed },
     lastRead: {},
     seenNotices: {},
+    dismissedEmergencies: {},
     weather: null,
+    expenses: expensesSeed(),
+    roster: rosterSeed(),
   }
 }

@@ -1,4 +1,4 @@
-import type { Channel, CrewMember, GuestCabin, Systems } from '../types'
+import type { AccountingRole, Channel, CrewMember, GuestCabin, Systems } from '../types'
 
 export const crew: CrewMember[] = [
   {
@@ -7,13 +7,17 @@ export const crew: CrewMember[] = [
     title: 'Captain',
     role: 'captain',
     department: 'bridge',
+    departments: ['bridge'],
     level: 1,
+    accounting: 'captain',
     initials: 'MG',
     watch: 'Command',
     online: true,
     email: 'max@thalima.com',
     phone: '+44 7700 900622',
     photo: '/crew/crew-eddy.png',
+    access: 'crew',
+    active: true,
   },
   {
     id: 'marco',
@@ -21,13 +25,17 @@ export const crew: CrewMember[] = [
     title: 'Chief Engineer',
     role: 'engineer',
     department: 'engineering',
+    departments: ['engineering'],
     level: 2,
+    accounting: 'submitter',
     initials: 'MB',
     watch: 'Day worker',
     online: true,
     email: 'marco@thalima.com',
     phone: '+39 333 124 8891',
     photo: '/crew/crew-marco.png',
+    access: 'crew',
+    active: true,
   },
   {
     id: 'sofia',
@@ -35,13 +43,17 @@ export const crew: CrewMember[] = [
     title: 'Chief Stewardess',
     role: 'stewardess',
     department: 'interior',
+    departments: ['interior'],
     level: 2,
+    accounting: 'accountant',
     initials: 'SR',
     watch: 'Interior',
     online: true,
     email: 'sofia@thalima.com',
     phone: '+34 612 448 201',
     photo: '/crew/crew-sofia.png',
+    access: 'crew',
+    active: true,
   },
   {
     id: 'julien',
@@ -49,13 +61,17 @@ export const crew: CrewMember[] = [
     title: 'Chef',
     role: 'chef',
     department: 'galley',
+    departments: ['galley'],
     level: 2,
+    accounting: 'submitter',
     initials: 'JM',
     watch: 'Galley',
     online: true,
     email: 'julien@thalima.com',
     phone: '+33 6 12 44 80 19',
     photo: '/crew/crew-julien.png',
+    access: 'crew',
+    active: true,
   },
   {
     id: 'luca',
@@ -63,15 +79,30 @@ export const crew: CrewMember[] = [
     title: 'Bosun',
     role: 'bosun',
     department: 'deck',
+    departments: ['deck'],
     level: 2,
+    accounting: 'submitter',
     initials: 'LF',
     watch: 'Anchor watch 16–20',
     online: true,
     email: 'luca@thalima.com',
     phone: '+39 347 221 0944',
     photo: '/crew/crew-luca.png',
+    access: 'crew',
+    active: true,
   },
 ]
+
+const seedCrew = crew.map((c) => ({ ...c }))
+
+export function setLiveCrew(list: CrewMember[]) {
+  const next = list.filter((c) => c.active !== false)
+  crew.splice(0, crew.length, ...next)
+}
+
+export function resetCrew() {
+  crew.splice(0, crew.length, ...seedCrew.map((c) => ({ ...c })))
+}
 
 /** Full LY2 / 30–50 m complement. Who is actually on Thalima this season. */
 export const roster = [
@@ -257,6 +288,13 @@ export const levelLabel: Record<1 | 2 | 3, string> = {
   3: 'Crew',
 }
 
+export const accountingRoleLabel: Record<AccountingRole, string> = {
+  none: 'None',
+  submitter: 'Submitter',
+  accountant: 'Accountant',
+  captain: 'Captain',
+}
+
 export const deptLabel: Record<string, string> = {
   bridge: 'Bridge',
   engineering: 'Engineering',
@@ -279,7 +317,7 @@ export const urgencyLabel: Record<string, string> = {
   routine: 'Routine',
   soon: 'Soon',
   now: 'Now',
-  emergency: 'Critical',
+  emergency: 'Emergency',
 }
 
 export const statusLabel: Record<string, string> = {

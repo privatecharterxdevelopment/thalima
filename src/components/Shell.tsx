@@ -1,9 +1,8 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BookOpen,
   CalendarDays,
   Cloud,
-  CloudSun,
   Compass,
   House,
   ListChecks,
@@ -12,24 +11,28 @@ import {
   Package,
   PanelLeftClose,
   PanelLeftOpen,
-  Plus,
+  Receipt,
   Users,
   Wrench,
+  Shield,
   type LucideIcon,
 } from 'lucide-react'
+import { AccountRail } from './AccountRail'
 import { Avatar } from './Avatar'
-import { ThemeToggle } from './ThemeToggle'
-import { Notices } from './Notices'
-import { ShipBadge } from './ShipBadge'
+import { CreateMenu } from './CreateMenu'
+import { EmergencyAlert } from './EmergencyAlert'
 import { helloParts, isFreshTask, isMarkedOn } from '../lib/format'
+import { useBoatFix } from '../lib/ais'
+import { yacht } from '../data/yacht'
 import { buildNotices, isNoticeSeen } from '../lib/notices'
 import { menuFor, titleFor } from '../nav'
 import { visibleChannels } from '../lib/permissions'
 import { useStore } from '../store'
 import { useUi } from '../ui'
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 
 const RAIL_KEY = 'thalima.rail.open'
+const ACCOUNT_KEY = 'thalima.account.open'
 
 const railIcon: Record<string, LucideIcon> = {
   '/app': House,
@@ -41,13 +44,15 @@ const railIcon: Record<string, LucideIcon> = {
   '/crew': Users,
   '/inventory': Package,
   '/maintenance': Wrench,
+  '/accounting': Receipt,
   '/cloud': Cloud,
   '/log': BookOpen,
+  '/admin': Shield,
 }
 
-function loadRailOpen() {
+function loadFlag(key: string) {
   try {
-    return sessionStorage.getItem(RAIL_KEY) === '1'
+    return sessionStorage.getItem(key) === '1'
   } catch {
     return false
   }
@@ -62,12 +67,13 @@ export function Bezel({ children, navFull }: { children: React.ReactNode; navFul
 }
 
 export function Shell() {
-  const { user, logout, tasks, lastRead, messages, seenNotices } = useStore()
+  const { user, tasks, lastRead, messages, seenNotices, roster, expenses } = useStore()
   const { navFull, setNavFull } = useUi()
   const loc = useLocation()
-  const go = useNavigate()
+  const fix = useBoatFix()
   const [now, setNow] = useState(() => new Date())
-  const [railOpen, setRailOpen] = useState(loadRailOpen)
+  const [railOpen, setRailOpen] = useState(() => loadFlag(RAIL_KEY))
+  const [accountOpen, setAccountOpen] = useState(() => loadFlag(ACCOUNT_KEY))
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000)
@@ -86,6 +92,14 @@ export function Shell() {
     }
   }, [railOpen])
 
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(ACCOUNT_KEY, accountOpen ? '1' : '0')
+    } catch {
+      /* ignore */
+    }
+  }, [accountOpen])
+
   if (!user) return null
 
   const local = now.toLocaleTimeString('en-GB', {
@@ -98,7 +112,6 @@ export function Shell() {
     weekday: 'long',
     timeZone: 'Europe/Rome',
   })
-  const canCreate = user.level <= 2
   const first = user.name.split(' ')[0]
   const heading = titleFor(loc.pathname, first)
   const fresh = tasks.filter((t) => isMarkedOn(t, user.id) && isFreshTask(t, user.id, lastRead)).length
@@ -109,12 +122,14 @@ export function Shell() {
       messages.filter((m) => m.channelId === ch.id && m.authorId !== user.id && (!read || m.at > read)).length
     )
   }, 0)
-  const unreadNotes = buildNotices({ user, tasks, lastRead }).filter(
+  const unreadNotes = buildNotices({ user, tasks, lastRead, roster, expenses, messages }).filter(
     (n) => !isNoticeSeen(user.id, n.id, seenNotices),
   ).length
   const dash = loc.pathname === '/app' && !navFull
   const chromeOff = navFull
   const links = menuFor(user)
+  const mainLinks = links.filter((l) => l.to !== '/admin')
+  const footLinks = links.filter((l) => l.to === '/admin')
 
   return (
     <Bezel navFull={chromeOff}>
@@ -125,26 +140,46 @@ export function Shell() {
               <img src="/mark.png" alt="" />
             </span>
             <nav>
-              {links.map((l) => {
+              {mainLinks.map((l) => {
                 const Icon = railIcon[l.to]
                 const n =
                   l.to === '/board' ? fresh : l.to === '/messages' ? unreadChat : l.to === '/notifications' ? unreadNotes : 0
+                return (
+                  <Fragment key={l.to}>
+                    <NavLink
+                      to={l.to}
+                      end={l.end}
+                      data-tip={l.label}
+                      aria-label={n > 0 ? `${l.label} ${n}` : l.label}
+                      className={({ isActive }) => (isActive ? 'on' : '')}
+                    >
+                      {Icon && <Icon size={19} strokeWidth={1.75} />}
+                      <span>{l.label}</span>
+                      {n > 0 && <em>{n > 9 ? '9+' : n}</em>}
+                    </NavLink>
+                    {l.to === '/position' || l.to === '/notifications' ? <i className="rail-sep" aria-hidden="true" /> : null}
+                  </Fragment>
+                )
+              })}
+            </nav>
+            <div className="rail-foot">
+              {footLinks.map((l) => {
+                const Icon = railIcon[l.to]
                 return (
                   <NavLink
                     key={l.to}
                     to={l.to}
                     end={l.end}
-                    title={l.label}
-                    aria-label={n > 0 ? `${l.label} ${n}` : l.label}
+                    data-tip={l.label}
+                    aria-label={l.label}
                     className={({ isActive }) => (isActive ? 'on' : '')}
                   >
-                    {Icon && <Icon size={20} strokeWidth={1.75} />}
+                    {Icon && <Icon size={19} strokeWidth={1.75} />}
                     <span>{l.label}</span>
-                    {n > 0 && <em>{n > 9 ? '9+' : n}</em>}
                   </NavLink>
                 )
               })}
-            </nav>
+            </div>
             <button
               className="rail-toggle"
               type="button"
@@ -158,48 +193,59 @@ export function Shell() {
         )}
         <div className="app-col">
           <header className="top">
-            <h1 className="top-greet">
-              {loc.pathname === '/app' ? (
-                <>
-                  <span className="top-hi">{helloParts(first).greet},</span> {first}
-                </>
-              ) : (
-                heading
-              )}
-            </h1>
+            <div className="top-hello">
+              <h1 className="top-greet">
+                {loc.pathname === '/app' ? (
+                  <>
+                    <span className="top-hi">{helloParts(first).greet},</span> {first}
+                  </>
+                ) : (
+                  heading
+                )}
+              </h1>
+              {loc.pathname === '/app' && fix.city ? (
+                <p className="top-vessel">
+                  {yacht.name.toUpperCase()} · {fix.city}
+                </p>
+              ) : null}
+            </div>
             <div className="ahoy">
-              <ShipBadge />
-              <span>
-                {weekday}, {local}
-              </span>
+              {user.level <= 2 ? (
+                <>
+                  <CreateMenu />
+                  <span className="ahoy-sep" aria-hidden="true" />
+                </>
+              ) : null}
               <button
-                className={`ghost-icon ${loc.pathname === '/weather' ? 'on' : ''}`}
-                onClick={() => go('/weather')}
-                aria-label="Weather"
+                className={`ahoy-who ${accountOpen ? 'on' : ''}`}
+                type="button"
+                onClick={() => setAccountOpen((v) => !v)}
+                aria-label={unreadNotes > 0 ? `Account, ${unreadNotes} notifications` : 'Account'}
+                aria-expanded={accountOpen}
+                aria-controls="account-rail"
               >
-                <CloudSun size={16} strokeWidth={2} />
-              </button>
-              {canCreate && (
-                <button
-                  className={`ghost-icon ${loc.pathname === '/new' ? 'on' : ''}`}
-                  onClick={() => go('/new')}
-                  aria-label="New task"
-                >
-                  <Plus size={16} strokeWidth={2} />
-                </button>
-              )}
-              <Notices />
-              <ThemeToggle />
-              <button className="ahoy-who" onClick={logout} title="Sign out">
                 <Avatar person={user} />
+                {unreadNotes > 0 && !accountOpen ? <span className="ahoy-dot" aria-hidden="true" /> : null}
               </button>
             </div>
           </header>
-          <main className={`page ${dash ? 'dash' : 'fill'}`}>
-            <Outlet />
-          </main>
+          <div className="app-work">
+            <main className={`page ${dash ? 'dash' : 'fill'}`}>
+              <Outlet />
+            </main>
+            {!chromeOff ? (
+              <AccountRail
+                open={accountOpen}
+                onClose={() => setAccountOpen(false)}
+                unreadChat={unreadChat}
+                unreadNotes={unreadNotes}
+                localTime={`${weekday}, ${local}`}
+              />
+            ) : null}
+          </div>
         </div>
       </div>
+      <EmergencyAlert />
     </Bezel>
   )
 }

@@ -1,72 +1,124 @@
 import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, useSearchParams } from 'react-router-dom'
 import { Avatar } from '../components/Avatar'
 import { SectionTabs } from '../components/SectionTabs'
 import { crew, deptLabel } from '../data/crew'
 import { certOverdue, certSoon } from '../lib/alerts'
-import { dayClock } from '../lib/format'
+import { dayClock, stationsOf } from '../lib/format'
+import {
+  currentPresence,
+  formatDayLong,
+  formatSpan,
+  presenceLabel,
+  rosterKindLabel,
+  upcomingAbsence,
+  untilOffboard,
+} from '../lib/roster'
 import { useStore } from '../store'
 
-const tabs = [
+const memberTabs = [
   { id: 'list', label: 'Crew list' },
   { id: 'certificates', label: 'Certificates' },
   { id: 'leave', label: 'Leave / rotation' },
   { id: 'handover', label: 'Handover' },
 ] as const
 
-type Tab = (typeof tabs)[number]['id']
+type MemberTab = (typeof memberTabs)[number]['id']
 
-export function Crew() {
-  const { user, ops, addHandover } = useStore()
+export function CrewLayout() {
+  const { roster } = useStore()
+  const pending = roster.filter((e) => e.status === 'pending').length
+  return (
+    <div className="crew-mod">
+      <nav className="ops-views crew-mod-head">
+        <NavLink to="/crew" end className={({ isActive }) => (isActive ? 'on' : '')}>
+          Members
+        </NavLink>
+        <NavLink to="/crew/schedule" className={({ isActive }) => (isActive ? 'on' : '')}>
+          Schedule
+          {pending ? <em>{pending}</em> : null}
+        </NavLink>
+      </nav>
+      <Outlet />
+    </div>
+  )
+}
+
+export function CrewMembers() {
+  const { user, ops, addHandover, roster } = useStore()
   const [params, setParams] = useSearchParams()
-  const tab = (tabs.some((t) => t.id === params.get('tab')) ? params.get('tab') : 'list') as Tab
+  const tab = (memberTabs.some((t) => t.id === params.get('tab')) ? params.get('tab') : 'list') as MemberTab
   const [toId, setToId] = useState(crew.find((c) => c.id !== user?.id)?.id ?? crew[0].id)
   const [body, setBody] = useState('')
 
   const certs = ops.certificates.filter((c) => c.kind === 'crew')
+  const leave = roster
+    .filter((e) => e.status === 'approved' && (e.duty === 'leave' || e.presence === 'offboard'))
+    .sort((a, b) => a.from.localeCompare(b.from))
 
   return (
-    <div className="pad inv crew-page">
-      <div className="inv-head">
-        <div>
-          <p className="inv-kicker">Onboard</p>
-          <p className="inv-copy">Seats, papers, leave, and what you tell the person who comes after you.</p>
-        </div>
-        <SectionTabs value={tab} onChange={(id) => setParams({ tab: id })} tabs={[...tabs]} />
-      </div>
+    <div className="crew-mod-body">
+      <SectionTabs
+        variant="pills"
+        value={tab}
+        onChange={(id) => setParams(id === 'list' ? {} : { tab: id })}
+        tabs={[...memberTabs]}
+      />
 
       {tab === 'list' && (
         <ul className="crew-grid">
-          {crew.map((person) => (
-            <li key={person.id} className="glass-card crew-profile">
-              <Avatar person={person} size="xl" />
-              <h2>{person.name}</h2>
-              <p className="crew-role">
-                {person.title} · {deptLabel[person.department]}
-              </p>
-              <dl className="crew-facts">
-                <div>
-                  <dt>Position</dt>
-                  <dd>
-                    {person.title}
-                    <span>{person.watch}</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Email</dt>
-                  <dd>
-                    <a href={`mailto:${person.email}`}>{person.email}</a>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Tel</dt>
-                  <dd>
-                    <a href={`tel:${person.phone.replace(/\s/g, '')}`}>{person.phone}</a>
-                  </dd>
-                </div>
-              </dl>
-            </li>
-          ))}
+          {crew.map((person) => {
+            const presence = currentPresence(person.id, roster)
+            const upcoming = upcomingAbsence(person.id, roster)
+            const until = presence === 'offboard' ? untilOffboard(person.id, roster) : undefined
+            return (
+              <li key={person.id} className="glass-card crew-profile">
+                <Avatar person={person} size="xl" />
+                <h2>{person.name}</h2>
+                <p className="crew-role">
+                  {person.title} · {stationsOf(person).map((d) => deptLabel[d]).join(' · ')}
+                </p>
+                <p className={`crew-now is-${presence}`}>
+                  <span>Current status</span>
+                  <strong>{presenceLabel[presence]}</strong>
+                  {until ? <em>Until {formatDayLong(until)}</em> : null}
+                </p>
+                {upcoming ? (
+                  <p className="crew-next">
+                    Upcoming absence
+                    <b>
+                      {formatSpan(upcoming.from, upcoming.to)} · {rosterKindLabel[upcoming.kind]}
+                    </b>
+                    <em>{upcoming.status === 'approved' ? 'Approved' : 'Pending'}</em>
+                  </p>
+                ) : null}
+                <Link className="btn ghost crew-sched-link" to="/crew/schedule">
+                  View schedule
+                </Link>
+                <dl className="crew-facts">
+                  <div>
+                    <dt>Position</dt>
+                    <dd>
+                      {person.title}
+                      <span>{person.watch}</span>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Email</dt>
+                    <dd>
+                      <a href={`mailto:${person.email}`}>{person.email}</a>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Tel</dt>
+                    <dd>
+                      <a href={`tel:${person.phone.replace(/\s/g, '')}`}>{person.phone}</a>
+                    </dd>
+                  </div>
+                </dl>
+              </li>
+            )
+          })}
         </ul>
       )}
 
@@ -112,15 +164,15 @@ export function Crew() {
             </tr>
           </thead>
           <tbody>
-            {ops.leave.map((row) => {
+            {leave.map((row) => {
               const who = crew.find((p) => p.id === row.crewId)
               return (
                 <tr key={row.id}>
                   <td>{who?.name}</td>
-                  <td>{row.kind}</td>
-                  <td>{dayClock(row.from)}</td>
-                  <td>{dayClock(row.to)}</td>
-                  <td className="muted">{row.note}</td>
+                  <td>{rosterKindLabel[row.kind]}</td>
+                  <td>{formatDayLong(row.from)}</td>
+                  <td>{formatDayLong(row.to)}</td>
+                  <td className="muted">{row.comment || '—'}</td>
                 </tr>
               )
             })}

@@ -1,31 +1,17 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
-import { crew } from '../data/crew'
 import { useStore } from '../store'
 
-const DEMO_PASSWORD = 'thalima'
-
-function firstName(name: string) {
-  return name.split(' ')[0].toLowerCase()
-}
-
-function seatFor(email: string, password: string) {
-  const person = crew.find((c) => c.email.toLowerCase() === email.trim().toLowerCase())
-  if (!person) return null
-  const key = password.trim().toLowerCase()
-  if (key !== firstName(person.name) && key !== DEMO_PASSWORD) return null
-  return person
-}
-
 export function Login() {
-  const { login, user } = useStore()
+  const { signIn, user, authReady } = useStore()
   const videoRef = useRef<HTMLVideoElement>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(true)
   const [showPw, setShowPw] = useState(false)
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     const html = document.documentElement
@@ -59,16 +45,15 @@ export function Login() {
     }
   }, [])
 
-  if (user) return <Navigate to="/app" replace />
+  if (!authReady) return null
+  if (user) return <Navigate to={user.access === 'owner' ? '/admin' : '/app'} replace />
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
-    const person = seatFor(email, password)
-    if (!person) {
-      setError('Wrong email or password.')
-      return
-    }
-    login(person.id, remember)
+    setBusy(true)
+    const fail = await signIn(email, password, remember)
+    setBusy(false)
+    if (fail) setError(fail)
   }
 
   return (
@@ -80,7 +65,7 @@ export function Login() {
           </Link>
           <h1>Welcome aboard.</h1>
           <p className="gate-lead">Crew ops for Thalima. Sign in with your seat.</p>
-          <form onSubmit={onSubmit}>
+          <form onSubmit={(e) => void onSubmit(e)}>
             <label className="gate-field">
               Email
               <input
@@ -103,7 +88,7 @@ export function Login() {
                   type={showPw ? 'text' : 'password'}
                   name="password"
                   autoComplete="current-password"
-                  placeholder="Your first name"
+                  placeholder="Password"
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value)
@@ -126,12 +111,13 @@ export function Login() {
               <input type="checkbox" checked={remember} onChange={(e) => setRemember(e.target.checked)} />
               Remember me
             </label>
-            <button className="gate-go" type="submit">
-              Sign in
+            <button className="gate-go" type="submit" disabled={busy}>
+              {busy ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
           <p className="gate-hint">
-            Dummy seats use the crew email. Password is the first name, lowercase — or <code>thalima</code>.
+            Owner: <code>owner@thalima.com</code> / <code>thalima</code> is master admin. Crew: first name lowercase,
+            padded to 6 characters with 1.
           </p>
         </div>
         <div className="gate-media" aria-hidden="true">

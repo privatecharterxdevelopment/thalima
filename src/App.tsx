@@ -12,13 +12,23 @@ import { Position } from './pages/Position'
 import { Interior } from './pages/Interior'
 import { Watch } from './pages/Watch'
 import { Logbook } from './pages/Logbook'
-import { Crew } from './pages/Crew'
+import { CrewLayout, CrewMembers } from './pages/Crew'
+import { CrewSchedule } from './pages/CrewSchedule'
 import { Inventory } from './pages/Inventory'
 import { Calendar } from './pages/Calendar'
 import { Galley } from './pages/Galley'
 import { NewJob } from './pages/NewJob'
 import { Cloud } from './pages/Cloud'
 import { Maintenance } from './pages/Maintenance'
+import { Accounting } from './pages/Accounting'
+import { AccountingOverview } from './pages/accounting/Overview'
+import { AccountingReceipts } from './pages/accounting/Receipts'
+import { AccountingDetail } from './pages/accounting/Detail'
+import { AccountingApprovals } from './pages/accounting/Approvals'
+import { AccountingReports } from './pages/accounting/Reports'
+import { AccountingManual } from './pages/accounting/Manual'
+import { AccountingUpload } from './pages/accounting/Upload'
+import { Admin } from './pages/Admin'
 import { Notifications } from './pages/Notifications'
 import { Weather } from './pages/Weather'
 import { Landing } from './pages/Landing'
@@ -31,7 +41,8 @@ import { Privacy } from './pages/Privacy'
 import { SiteProvider } from './site'
 
 function Gate({ children }: { children: ReactNode }) {
-  const { user } = useStore()
+  const { user, authReady } = useStore()
+  if (!authReady) return null
   if (!user) return <Navigate to="/login" replace />
   return children
 }
@@ -103,9 +114,24 @@ export default function App() {
             <Route path="/watch" element={<Watch />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/maintenance" element={<Maintenance />} />
+            <Route path="/accounting" element={<Accounting />}>
+              <Route index element={<AccountingOverview />} />
+              <Route path="expenses" element={<AccountingReceipts />} />
+              <Route path="expenses/:id" element={<AccountingDetail />} />
+              <Route path="receipts" element={<Navigate to="/accounting/expenses" replace />} />
+              <Route path="receipts/:id" element={<AccountingDetail />} />
+              <Route path="approvals" element={<AccountingApprovals />} />
+              <Route path="reports" element={<AccountingReports />} />
+              <Route path="new" element={<AccountingManual />} />
+              <Route path="upload" element={<AccountingUpload />} />
+            </Route>
             <Route path="/engineering" element={<Navigate to="/maintenance?tab=hours" replace />} />
-            <Route path="/crew" element={<Crew />} />
+            <Route path="/crew" element={<CrewLayout />}>
+              <Route index element={<CrewMembers />} />
+              <Route path="schedule" element={<CrewSchedule />} />
+            </Route>
             <Route path="/log" element={<Logbook />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/cloud" element={<Cloud />} />
             <Route path="/weather" element={<Weather />} />

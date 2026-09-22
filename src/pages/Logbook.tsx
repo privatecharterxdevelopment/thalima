@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { crew } from '../data/crew'
 import { dayClock } from '../lib/format'
 import { useStore } from '../store'
-import { Avatar } from '../components/Avatar'
+import { WhoLine } from '../components/WhoLine'
 import { SectionTabs } from '../components/SectionTabs'
 import type { DrillKind } from '../types'
 
@@ -33,10 +33,6 @@ export function Logbook() {
   return (
     <div className="pad">
       <div className="inv-head">
-        <div>
-          <p className="inv-kicker">Watch</p>
-          <p className="inv-copy">The log, and when we last drilled.</p>
-        </div>
         <SectionTabs
           value={tab}
           onChange={(id) => setParams(id === 'log' ? {} : { tab: id })}
@@ -71,16 +67,9 @@ export function Logbook() {
               const who = crew.find((c) => c.id === e.authorId)
               return (
                 <article key={e.id}>
-                  <small>
-                    {dayClock(e.at)}
-                    {who ? ` · ${who.name}` : ''}
-                  </small>
+                  <small>{dayClock(e.at)}</small>
                   <p style={{ marginTop: 8, lineHeight: 1.65, maxWidth: '62ch' }}>{e.text}</p>
-                  {who && (
-                    <div style={{ marginTop: 10 }}>
-                      <Avatar person={who} size="sm" />
-                    </div>
-                  )}
+                  {who ? <WhoLine people={[who]} /> : null}
                 </article>
               )
             })}

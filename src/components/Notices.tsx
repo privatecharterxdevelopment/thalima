@@ -5,12 +5,14 @@ import { buildNotices, isNoticeSeen } from '../lib/notices'
 import { useStore } from '../store'
 
 export function Notices() {
-  const { user, tasks, lastRead, seenNotices } = useStore()
+  const { user, tasks, lastRead, seenNotices, roster, expenses, messages } = useStore()
 
   const unseen = useMemo(() => {
     if (!user) return 0
-    return buildNotices({ user, tasks, lastRead }).filter((n) => !isNoticeSeen(user.id, n.id, seenNotices)).length
-  }, [user, tasks, lastRead, seenNotices])
+    return buildNotices({ user, tasks, lastRead, roster, expenses, messages }).filter(
+      (n) => !isNoticeSeen(user.id, n.id, seenNotices),
+    ).length
+  }, [user, tasks, lastRead, roster, expenses, messages, seenNotices])
 
   if (!user) return null
 

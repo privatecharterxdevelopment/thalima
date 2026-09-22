@@ -18,16 +18,19 @@ export const appLinks: AppLink[] = [
   { to: '/crew', label: 'Crew' },
   { to: '/inventory', label: 'Inventory' },
   { to: '/maintenance', label: 'Maintenance' },
+  { to: '/accounting', label: 'Accounting' },
   { to: '/cloud', label: 'Cloud' },
   { to: '/log', label: 'Log' },
 ]
 
-export function menuFor(_user: CrewMember) {
+export function menuFor(user: CrewMember) {
+  if (user.access === 'owner' || user.level === 1) return [...appLinks, { to: '/admin', label: 'Admin' }]
   return appLinks
 }
 
 export function titleFor(pathname: string, first: string) {
   if (pathname === '/app') return hello(first)
+  if (pathname.startsWith('/admin')) return 'Admin'
   const match = [...appLinks]
     .filter((l) => l.to !== '/')
     .sort((a, b) => b.to.length - a.to.length)

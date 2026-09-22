@@ -32,16 +32,19 @@ export function FileAdd({
   files,
   onChange,
   label = 'Attach',
+  accept,
 }: {
   files: AttachedFile[]
   onChange: (files: AttachedFile[]) => void
   label?: string
+  accept?: string
 }) {
   return (
     <label className="file-add">
       <input
         type="file"
         multiple
+        accept={accept}
         onChange={async (e) => {
           const added = await filesFromList(e.target.files, files.length)
           if (added.length) onChange([...files, ...added])

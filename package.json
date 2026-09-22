@@ -4,12 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host --port 5173",
     "build": "tsc -b && vite build",
+    "start": "node --experimental-strip-types server/listen.ts",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview --host"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.47.0",
     "mapbox-gl": "^2.15.0",

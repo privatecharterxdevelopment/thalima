@@ -61,6 +61,8 @@ export function NavWidget({ variant = 'strip' }: { variant?: 'strip' | 'page' | 
   )
   const hereRef = useRef(here)
   hereRef.current = here
+  const themeRef = useRef(theme)
+  themeRef.current = theme
   const { navFull, setNavFull } = useUi()
   const nav = useNavigate()
   const mapDiv = useRef<HTMLDivElement>(null)
@@ -144,7 +146,7 @@ export function NavWidget({ variant = 'strip' }: { variant?: 'strip' | 'page' | 
       if (!destRef.current) {
         destRef.current = new mapboxgl.Marker({ element: destEl() }).setLngLat([start.lon, start.lat])
       }
-      dressMap(map)
+      dressMap(map, themeRef.current)
       draw(map)
       frame(map, true)
       const safeResize = () => {
@@ -317,7 +319,7 @@ export function NavWidget({ variant = 'strip' }: { variant?: 'strip' | 'page' | 
             }}
             aria-label={navFull ? 'Exit fullscreen' : 'Fullscreen chart'}
           >
-            {navFull ? <Minimize2 size={18} /> : <Expand size={18} />}
+            {navFull ? <Minimize2 size={15} strokeWidth={1.75} /> : <Expand size={15} strokeWidth={1.75} />}
           </button>
         )}
       </div>
