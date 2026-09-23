@@ -89,10 +89,11 @@ export function Notifications() {
 
   if (!user) return null
 
+  const me = user
   const alerts = buildAlerts({ tasks, ops, systems })
-  const openCount = tasks.filter((t) => canSeeTask(user, t) && isOpenStatus(t.status)).length
-  const waiting = canReviewAccounting(user)
-    ? expenses.filter((e) => e.status === 'pending' && e.approverId === user.id).length
+  const openCount = tasks.filter((t) => canSeeTask(me, t) && isOpenStatus(t.status)).length
+  const waiting = canReviewAccounting(me)
+    ? expenses.filter((e) => e.status === 'pending' && e.approverId === me.id).length
     : 0
   const overview = [
     { id: 'open', count: openCount, label: 'Open tasks', to: '/board' },
@@ -114,10 +115,10 @@ export function Notifications() {
       label: 'Certificates expiring',
       to: '/cloud?tab=certificates',
     },
-  ].filter((row) => row.id !== 'acct' || canReviewAccounting(user))
+  ].filter((row) => row.id !== 'acct' || canReviewAccounting(me))
 
   function dismiss(n: CrewNotice) {
-    if (!isNoticeSeen(user.id, n.id, seenNotices)) markNoticeSeen(n.id)
+    if (!isNoticeSeen(me.id, n.id, seenNotices)) markNoticeSeen(n.id)
     if (n.to) nav(n.to)
   }
 
