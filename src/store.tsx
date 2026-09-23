@@ -54,6 +54,7 @@ import type {
   RosterKind,
   Task,
   Trip,
+  TripNote,
   TaskKind,
   TaskNote,
   TaskStatus,
@@ -82,6 +83,100 @@ function namesFor(ids: string[]) {
 
 function withNote(task: Task, note: TaskNote): Task {
   return { ...task, notes: [...(task.notes ?? []), note] }
+}
+
+function tripNote(authorId: string, text: string, kind: TripNote['kind'] = 'note'): TripNote {
+  return { id: uid('tn'), authorId, text, at: new Date().toISOString(), kind }
+}
+
+function withTripLog(trip: Trip, note: TripNote): Trip {
+  const log = [...(trip.log ?? [])]
+  const last = log[log.length - 1]
+  const coalesce =
+    (note.kind === 'edit' || note.kind === 'guest') &&
+    last?.kind === note.kind &&
+    last.authorId === note.authorId
+  if (coalesce) {
+    log[log.length - 1] = { ...last, text: note.text, at: note.at }
+  } else {
+    log.push(note)
+  }
+  return { ...trip, log }
+}
+
+function guestLabel(g: { name: string }) {
+  return g.name.trim() || 'Guest'
+}
+
+function describeTripPatch(
+  prev: Trip,
+  patch: Partial<
+    Pick<Trip, 'title' | 'from' | 'to' | 'ownerAboard' | 'guests' | 'transfers' | 'reservations' | 'notes' | 'prepped'>
+  >,
+): { text: string; kind: TripNote['kind'] } | null {
+  if (patch.guests) {
+    const before = prev.guests
+    const after = patch.guests
+    if (after.length > before.length) {
+      const added = after[after.length - 1]
+      const label = guestLabel(added)
+      // Skip noisy "Added guest" until a name is typed — still log once via coalesced updates.
+      if (!added.name.trim()) return { text: 'Added a guest', kind: 'guest' }
+      return { text: `Added guest ${label}`, kind: 'guest' }
+    }
+    if (after.length < before.length) {
+      const afterKeys = new Set(after.map((g) => g.id ?? g.name))
+      const removed = before.find((g) => !afterKeys.has(g.id ?? g.name)) ?? before[before.length - 1]
+      return { text: `Removed guest ${guestLabel(removed)}`, kind: 'guest' }
+    }
+    const changed = after.find((g, i) => {
+      const b = before[i]
+      if (!b) return true
+      return (
+        g.name !== b.name ||
+        g.cabin !== b.cabin ||
+        g.diet !== b.diet ||
+        g.allergy !== b.allergy ||
+        g.laundry !== b.laundry
+      )
+    })
+    if (changed) {
+      const label = guestLabel(changed)
+      return { text: `Updated guest ${label}`, kind: 'guest' }
+    }
+    return null
+  }
+  if (patch.title !== undefined && patch.title !== prev.title) {
+    return { text: `Changed title to “${patch.title.trim() || 'Untitled'}”`, kind: 'edit' }
+  }
+  if (patch.from !== undefined && patch.from !== prev.from) {
+    return { text: 'Updated start', kind: 'edit' }
+  }
+  if (patch.to !== undefined && patch.to !== prev.to) {
+    return { text: 'Updated end', kind: 'edit' }
+  }
+  if (patch.ownerAboard !== undefined && patch.ownerAboard !== prev.ownerAboard) {
+    return {
+      text: patch.ownerAboard ? 'Set owner aboard' : 'Set charter / guests',
+      kind: 'edit',
+    }
+  }
+  if (patch.transfers !== undefined && patch.transfers !== prev.transfers) {
+    return { text: patch.transfers.trim() ? 'Updated transfers' : 'Cleared transfers', kind: 'edit' }
+  }
+  if (patch.reservations !== undefined && patch.reservations !== prev.reservations) {
+    return {
+      text: patch.reservations.trim() ? 'Updated reservations' : 'Cleared reservations',
+      kind: 'edit',
+    }
+  }
+  if (patch.notes !== undefined && patch.notes !== prev.notes) {
+    return { text: patch.notes.trim() ? 'Updated notes' : 'Cleared notes', kind: 'edit' }
+  }
+  if (patch.prepped !== undefined && patch.prepped && !prev.prepped) {
+    return { text: 'Prep tasks created', kind: 'prep' }
+  }
+  return null
 }
 
 function load(): AppSnapshot {
@@ -135,7 +230,14 @@ type Store = AppSnapshot & {
   addHandover: (input: { toId: string; body: string }) => void
   addDrill: (input: { kind: DrillKind; note: string }) => void
   setTripPrepped: (id: string) => void
-  addTrip: (input: Omit<Trip, 'id' | 'prepped'>) => string
+  addTrip: (input: Omit<Trip, 'id' | 'prepped' | 'log'>) => string
+  updateTrip: (
+    id: string,
+    patch: Partial<
+      Pick<Trip, 'title' | 'from' | 'to' | 'ownerAboard' | 'guests' | 'transfers' | 'reservations' | 'notes' | 'prepped'>
+    >,
+  ) => void
+  addTripNote: (id: string, text: string) => void
   addStockItem: (
     input: { kind: 'technical'; row: Omit<StockItem, 'id'> } | { kind: 'provisioning'; row: Omit<ProvisionItem, 'id'> },
   ) => void
@@ -833,19 +935,91 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [],
   )
 
-  const addTrip = useCallback((input: Omit<Trip, 'id' | 'prepped'>) => {
+  const addTrip = useCallback((input: Omit<Trip, 'id' | 'prepped' | 'log'>) => {
     const id = uid('trip')
-    patchOps((ops) => ({ ...ops, trips: [...ops.trips, { ...input, id }].sort((a, b) => a.from.localeCompare(b.from)) }))
+    setSnap((s) => {
+      const who = s.userId ? crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew' : null
+      const trip: Trip = {
+        ...input,
+        id,
+        log: s.userId && who ? [tripNote(s.userId, `Created · ${who}`, 'edit')] : [],
+      }
+      return {
+        ...s,
+        ops: {
+          ...s.ops,
+          trips: [...s.ops.trips, trip].sort((a, b) => a.from.localeCompare(b.from)),
+        },
+      }
+    })
     recordActivity('trip_add', `Added event ${input.title}`)
     return id
-  }, [patchOps])
+  }, [])
+
+  const updateTrip = useCallback(
+    (
+      id: string,
+      patch: Partial<
+        Pick<Trip, 'title' | 'from' | 'to' | 'ownerAboard' | 'guests' | 'transfers' | 'reservations' | 'notes' | 'prepped'>
+      >,
+    ) => {
+      setSnap((s) => {
+        if (!s.userId) return s
+        return {
+          ...s,
+          ops: {
+            ...s.ops,
+            trips: s.ops.trips.map((t) => {
+              if (t.id !== id) return t
+              const next = { ...t, ...patch }
+              if (patch.from !== undefined || patch.to !== undefined) {
+                const a = patch.from ?? t.from
+                const b = patch.to ?? t.to
+                next.from = a <= b ? a : b
+                next.to = a <= b ? b : a
+              }
+              const change = describeTripPatch(t, patch)
+              if (!change) return next
+              return withTripLog(next, tripNote(s.userId!, change.text, change.kind))
+            }),
+          },
+        }
+      })
+    },
+    [],
+  )
+
+  const addTripNote = useCallback((id: string, text: string) => {
+    const body = text.trim()
+    if (!body) return
+    setSnap((s) => {
+      if (!s.userId) return s
+      return {
+        ...s,
+        ops: {
+          ...s.ops,
+          trips: s.ops.trips.map((t) =>
+            t.id === id ? withTripLog(t, tripNote(s.userId!, body, 'note')) : t,
+          ),
+        },
+      }
+    })
+  }, [])
 
   const setTripPrepped = useCallback((id: string) => {
-    patchOps((ops) => ({
-      ...ops,
-      trips: ops.trips.map((t) => (t.id === id ? { ...t, prepped: true } : t)),
+    setSnap((s) => ({
+      ...s,
+      ops: {
+        ...s.ops,
+        trips: s.ops.trips.map((t) => {
+          if (t.id !== id || t.prepped) return t
+          const next = { ...t, prepped: true }
+          if (!s.userId) return next
+          return withTripLog(next, tripNote(s.userId, 'Prep tasks created', 'prep'))
+        }),
+      },
     }))
-  }, [patchOps])
+  }, [])
 
   const addReceipt = useCallback((file: AttachedFile) => {
     const id = uid('ex')
@@ -1259,6 +1433,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addDrill,
       setTripPrepped,
       addTrip,
+      updateTrip,
+      addTripNote,
       addStockItem,
       addPurchase,
       addReceipt,
@@ -1274,7 +1450,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       reset,
       user,
     }),
-    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, addDrill, setTripPrepped, addTrip, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
+    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, addDrill, setTripPrepped, addTrip, updateTrip, addTripNote, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

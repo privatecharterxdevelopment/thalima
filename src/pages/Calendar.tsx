@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { calRoleLabel, calRoles, crew } from '../data/crew'
 import { clock, dayClock } from '../lib/format'
 import { monthDays, sameDay } from '../lib/cal'
@@ -22,7 +22,7 @@ function localInput(iso: string) {
 }
 
 export function Calendar() {
-  const { user, events, addEvent, removeEvent, ops, addTask, setTripPrepped, addTrip, roster } = useStore()
+  const { user, events, addEvent, removeEvent, ops, addTrip, roster } = useStore()
   const [params, setParams] = useSearchParams()
   const view = (params.get('tab') === 'trips' ? 'trips' : 'diary') as 'diary' | 'trips'
   const [role, setRole] = useState<CalRole | 'all'>(() => {
@@ -74,82 +74,14 @@ export function Calendar() {
         <div className="trip-list">
           <div className="cal-trips-head">{viewSwitch}</div>
           {ops.trips.map((trip) => (
-            <article key={trip.id} className="glass-card trip-card">
+            <Link key={trip.id} to={`/calendar/event/${trip.id}`} className="glass-card trip-card">
               <p className="inv-kicker">{trip.ownerAboard ? 'Owner aboard' : 'Charter / guests'}</p>
               <h2>{trip.title}</h2>
               <p className="muted">
                 {dayClock(trip.from)} → {dayClock(trip.to)}
+                {trip.guests.length > 0 ? ` · ${trip.guests.length} guests` : ''}
               </p>
-              <p>{trip.notes}</p>
-              <p className="muted">
-                {trip.transfers} · {trip.reservations}
-              </p>
-              {trip.guests.length > 0 && (
-                <table className="table inv-table">
-                  <thead>
-                    <tr>
-                      <th>Guest</th>
-                      <th>Cabin</th>
-                      <th>Diet</th>
-                      <th>Allergy</th>
-                      <th>Laundry</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {trip.guests.map((g) => (
-                      <tr key={g.name}>
-                        <td>{g.name}</td>
-                        <td>{g.cabin}</td>
-                        <td>{g.diet}</td>
-                        <td className={g.allergy !== '—' ? 'low' : ''}>{g.allergy}</td>
-                        <td className="muted">{g.laundry}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {user.level <= 2 && !trip.prepped && (
-                <button
-                  className="btn"
-                  type="button"
-                  onClick={() => {
-                    addTask({
-                      title: `Prepare cabins · ${trip.title}`,
-                      body: trip.guests.map((g) => `${g.name} · ${g.cabin} · ${g.allergy}`).join('\n') || trip.notes,
-                      department: 'interior',
-                      assigneeId: 'sofia',
-                      urgency: 'soon',
-                      due: trip.from,
-                      kind: 'guest_request',
-                    })
-                    addTask({
-                      title: `Provisioning · ${trip.title}`,
-                      body: trip.notes,
-                      department: 'galley',
-                      assigneeId: 'julien',
-                      urgency: 'soon',
-                      due: trip.from,
-                      kind: 'provisioning',
-                    })
-                    if (trip.transfers) {
-                      addTask({
-                        title: `Transfer · ${trip.title}`,
-                        body: trip.transfers,
-                        department: 'deck',
-                        assigneeId: 'luca',
-                        urgency: 'soon',
-                        due: trip.from,
-                        kind: 'tender',
-                      })
-                    }
-                    setTripPrepped(trip.id)
-                  }}
-                >
-                  Make prep tasks
-                </button>
-              )}
-              {trip.prepped && <p className="hint">Prep tasks are on the board.</p>}
-            </article>
+            </Link>
           ))}
           {tripCompose && user.level <= 2 ? (
             <NewTrip
@@ -309,7 +241,7 @@ function NewTrip({
   onSave,
 }: {
   onClose: () => void
-  onSave: (input: Omit<Trip, 'id' | 'prepped'>) => void
+  onSave: (input: Omit<Trip, 'id' | 'prepped' | 'log'>) => void
 }) {
   const [title, setTitle] = useState('')
   const [from, setFrom] = useState(() => {

@@ -16,6 +16,7 @@ import { CrewLayout, CrewMembers } from './pages/Crew'
 import { CrewSchedule } from './pages/CrewSchedule'
 import { Inventory } from './pages/Inventory'
 import { Calendar } from './pages/Calendar'
+import { EventPage } from './pages/EventPage'
 import { Galley } from './pages/Galley'
 import { NewJob } from './pages/NewJob'
 import { Cloud } from './pages/Cloud'
@@ -132,6 +133,7 @@ export default function App() {
             </Route>
             <Route path="/log" element={<Logbook />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/calendar/event/:tripId" element={<EventPage />} />
             <Route path="/calendar" element={<Calendar />} />
             <Route path="/cloud" element={<Cloud />} />
             <Route path="/weather" element={<Weather />} />
