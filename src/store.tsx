@@ -92,7 +92,11 @@ function tripNote(authorId: string, text: string, kind: TripNote['kind'] = 'note
 function withTripLog(trip: Trip, note: TripNote): Trip {
   const log = [...(trip.log ?? [])]
   const last = log[log.length - 1]
-  if (note.kind === 'edit' && last?.kind === 'edit' && last.authorId === note.authorId) {
+  const coalesce =
+    (note.kind === 'edit' || note.kind === 'guest') &&
+    last?.kind === note.kind &&
+    last.authorId === note.authorId
+  if (coalesce) {
     log[log.length - 1] = { ...last, text: note.text, at: note.at }
   } else {
     log.push(note)
@@ -115,7 +119,10 @@ function describeTripPatch(
     const after = patch.guests
     if (after.length > before.length) {
       const added = after[after.length - 1]
-      return { text: `Added guest ${guestLabel(added)}`, kind: 'guest' }
+      const label = guestLabel(added)
+      // Skip noisy "Added guest" until a name is typed — still log once via coalesced updates.
+      if (!added.name.trim()) return { text: 'Added a guest', kind: 'guest' }
+      return { text: `Added guest ${label}`, kind: 'guest' }
     }
     if (after.length < before.length) {
       const afterKeys = new Set(after.map((g) => g.id ?? g.name))
@@ -133,7 +140,10 @@ function describeTripPatch(
         g.laundry !== b.laundry
       )
     })
-    if (changed) return { text: `Updated guest ${guestLabel(changed)}`, kind: 'guest' }
+    if (changed) {
+      const label = guestLabel(changed)
+      return { text: `Updated guest ${label}`, kind: 'guest' }
+    }
     return null
   }
   if (patch.title !== undefined && patch.title !== prev.title) {
