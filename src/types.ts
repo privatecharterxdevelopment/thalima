@@ -389,11 +389,20 @@ export type Drill = {
 }
 
 export type TripGuest = {
+  id?: string
   name: string
   cabin: string
   diet: string
   allergy: string
   laundry: string
+}
+
+export type TripNote = {
+  id: string
+  authorId: string
+  text: string
+  at: string
+  kind?: 'note' | 'edit' | 'guest' | 'prep'
 }
 
 export type Trip = {
@@ -407,6 +416,7 @@ export type Trip = {
   reservations: string
   notes: string
   prepped?: boolean
+  log?: TripNote[]
 }
 
 export type OpsState = {

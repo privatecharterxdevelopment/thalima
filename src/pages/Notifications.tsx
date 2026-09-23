@@ -117,6 +117,7 @@ export function Notifications() {
   ].filter((row) => row.id !== 'acct' || canReviewAccounting(user))
 
   function dismiss(n: CrewNotice) {
+    if (!user) return
     if (!isNoticeSeen(user.id, n.id, seenNotices)) markNoticeSeen(n.id)
     if (n.to) nav(n.to)
   }

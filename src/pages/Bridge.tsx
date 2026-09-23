@@ -92,7 +92,7 @@ export function Bridge() {
             Overdue
           </button>
           {trip ? (
-            <button type="button" onClick={() => nav('/calendar?tab=trips')}>
+            <button type="button" onClick={() => nav(`/calendar/event/${trip.id}`)}>
               <b>{trip.guests.length}</b>
               Guests aboard
               <em>{trip.title}</em>
@@ -197,7 +197,7 @@ export function Bridge() {
             <ul className="home-events">
               {tripOnDay ? (
                 <li className="is-guests">
-                  <button type="button" onClick={() => nav('/calendar?tab=trips')}>
+                  <button type="button" onClick={() => nav(`/calendar/event/${tripOnDay.id}`)}>
                     <strong>{tripOnDay.title}</strong>
                     <small>{tripOnDay.guests.map((g) => g.name).join(' · ')}</small>
                   </button>
