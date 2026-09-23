@@ -31,6 +31,7 @@ export function menuFor(user: CrewMember) {
 export function titleFor(pathname: string, first: string) {
   if (pathname === '/app') return hello(first)
   if (pathname.startsWith('/admin')) return 'Admin'
+  if (pathname.startsWith('/calendar/event/')) return 'Event'
   const match = [...appLinks]
     .filter((l) => l.to !== '/')
     .sort((a, b) => b.to.length - a.to.length)
