@@ -161,7 +161,7 @@ export const servicesSeed: ServiceLog[] = [
     assetId: 'genset',
     at: days(-12),
     hours: 2870,
-    by: 'marco',
+    by: 'engineer',
     text: 'Oil, filters, belts. Ran 20 min load test. Clean.',
   },
   {
@@ -169,7 +169,7 @@ export const servicesSeed: ServiceLog[] = [
     assetId: 'maker',
     at: days(-3),
     hours: 1836,
-    by: 'marco',
+    by: 'engineer',
     text: 'Pickled after last run. New 20 μm and 5 μm standing by.',
   },
   {
@@ -177,7 +177,7 @@ export const servicesSeed: ServiceLog[] = [
     assetId: 'tender',
     at: days(-20),
     hours: 280,
-    by: 'luca',
+    by: 'mate',
     text: 'Impeller, oil, jet wash. Hours logged after Porto Cervo week.',
   },
   {
@@ -185,7 +185,7 @@ export const servicesSeed: ServiceLog[] = [
     assetId: 'main',
     at: days(-40),
     hours: 4720,
-    by: 'marco',
+    by: 'engineer',
     text: '250 h service in Badalona. Last spare impeller used — order two.',
   },
 ]
@@ -198,7 +198,7 @@ export const defectsSeed: Defect[] = [
     body: 'Slow weep since 2024 pump swap. Level marked 08:00. Isolate if it drops 10 mm.',
     status: 'watch',
     at: hoursAgo(8),
-    by: 'marco',
+    by: 'engineer',
   },
   {
     id: 'df2',
@@ -207,7 +207,7 @@ export const defectsSeed: Defect[] = [
     body: 'Last spare used in Genoa. No passage under power until two are in the workshop.',
     status: 'open',
     at: hoursAgo(48),
-    by: 'marco',
+    by: 'engineer',
   },
 ]
 
@@ -249,93 +249,14 @@ export const certificatesSeed: Certificate[] = [
     title: 'Lifejackets / liferaft inspect',
     kind: 'safety',
     expiresAt: days(28),
-    issuer: 'Olbia safety',
+    issuer: 'Class survey',
     notes: 'Lazarette raft next.',
   },
-  {
-    id: 'c-max-eng1',
-    title: 'ENG1',
-    kind: 'crew',
-    holderId: 'eddy',
-    expiresAt: days(18),
-    issuer: 'MCA approved',
-    notes: 'Book renewal before the winter.',
-  },
-  {
-    id: 'c-max-stcw',
-    title: 'STCW / Master (Yachts)',
-    kind: 'crew',
-    holderId: 'eddy',
-    expiresAt: days(400),
-    issuer: 'MCA',
-    notes: '',
-  },
-  {
-    id: 'c-marco-eng1',
-    title: 'ENG1',
-    kind: 'crew',
-    holderId: 'marco',
-    expiresAt: days(55),
-    issuer: 'MCA approved',
-    notes: '',
-  },
-  {
-    id: 'c-sofia-stcw',
-    title: 'STCW',
-    kind: 'crew',
-    holderId: 'sofia',
-    expiresAt: days(9),
-    issuer: 'STCW',
-    notes: 'Refresh booked Genoa if we go west.',
-  },
-  {
-    id: 'c-julien-food',
-    title: 'Food hygiene',
-    kind: 'crew',
-    holderId: 'julien',
-    expiresAt: days(80),
-    issuer: 'Level 3',
-    notes: '',
-  },
-  {
-    id: 'c-luca-eng1',
-    title: 'ENG1',
-    kind: 'crew',
-    holderId: 'luca',
-    expiresAt: days(-4),
-    issuer: 'MCA approved',
-    notes: 'Expired this week — scan to owner.',
-  },
 ]
 
-export const leaveSeed: LeaveRow[] = [
-  {
-    id: 'lv1',
-    crewId: 'sofia',
-    from: days(18),
-    to: days(28),
-    kind: 'leave',
-    note: 'Home. Interior covered by Max + Julien for service only.',
-  },
-  {
-    id: 'lv2',
-    crewId: 'luca',
-    from: days(40),
-    to: days(55),
-    kind: 'rotation',
-    note: 'Relief bosun TBC. Handover before Olbia.',
-  },
-]
+export const leaveSeed: LeaveRow[] = []
 
-export const handoversSeed: Handover[] = [
-  {
-    id: 'ho1',
-    fromId: 'luca',
-    toId: 'eddy',
-    at: hoursAgo(72),
-    body: 'Tender hours 312. Fenders 8 large in stbd locker. Williams key on the hook in the crew mess. No swimming after dark standing order still in force.',
-  },
-]
+export const handoversSeed: Handover[] = []
 
 export const provisionsSeed: ProvisionItem[] = [
   { id: 'p1', category: 'beverage', item: 'Still water 1 L', stock: 36, min: 24, unit: 'btl', note: 'Crew + guest' },
@@ -360,7 +281,7 @@ export const purchasesSeed: PurchaseRequest[] = [
     currency: 'EUR',
     category: 'repair',
     status: 'pending',
-    by: 'marco',
+    by: 'engineer',
     at: hoursAgo(20),
     note: 'Do not motor until they are onboard.',
   },
@@ -372,7 +293,7 @@ export const purchasesSeed: PurchaseRequest[] = [
     currency: 'EUR',
     category: 'repair',
     status: 'pending',
-    by: 'marco',
+    by: 'engineer',
     at: hoursAgo(20),
     note: 'With the impeller order.',
   },
@@ -384,7 +305,7 @@ export const purchasesSeed: PurchaseRequest[] = [
     currency: 'EUR',
     category: 'fuel',
     status: 'approved',
-    by: 'eddy',
+    by: 'captain',
     at: hoursAgo(6),
     note: 'Only if impeller spare is here.',
   },
@@ -396,7 +317,7 @@ export const purchasesSeed: PurchaseRequest[] = [
     currency: 'EUR',
     category: 'provisioning',
     status: 'paid',
-    by: 'julien',
+    by: 'chef',
     at: hoursAgo(30),
     note: 'Receipt in Cloud.',
   },
@@ -475,58 +396,26 @@ export const drillsSeed: Drill[] = [
     id: 'dr1',
     kind: 'fire',
     at: days(-8, 9),
-    by: 'eddy',
+    by: 'captain',
     note: 'Engine-room scenario. All five. 11 minutes to boundary cool.',
   },
   {
     id: 'dr2',
     kind: 'mob',
     at: days(-22, 16),
-    by: 'luca',
+    by: 'mate',
     note: 'Dan buoy, Williams as recovery. Timed 6 minutes.',
   },
   {
     id: 'dr3',
     kind: 'safety_check',
     at: days(-5, 8),
-    by: 'luca',
+    by: 'mate',
     note: 'Lifejackets 12, flares, EPIRB test (no transmit).',
   },
 ]
 
-export const tripsSeed: Trip[] = [
-  {
-    id: 'tr1',
-    title: 'Adler week · Marinella',
-    from: days(-2),
-    to: days(5),
-    ownerAboard: true,
-    guests: [
-      { name: 'Mr Adler', cabin: 'Owner suite', diet: 'No ice in spirit', allergy: '—', laundry: 'Whites daily' },
-      { name: 'Mrs Adler', cabin: 'Owner suite', diet: 'Soft wake 08:00', allergy: '—', laundry: 'Whites daily' },
-      { name: 'Clara Vogel', cabin: 'VIP', diet: 'Espresso 07:15 if fair', allergy: 'Shellfish', laundry: 'Extra throw' },
-      { name: 'Tom Vogel', cabin: 'VIP', diet: '—', allergy: '—', laundry: '—' },
-      { name: 'Nina Adler', cabin: 'Twin port', diet: 'No dairy at breakfast', allergy: 'Dairy', laundry: 'No softener' },
-      { name: 'Otto Adler', cabin: 'Twin port', diet: 'Kids 19:30', allergy: '—', laundry: 'Beach kit' },
-    ],
-    transfers: 'Tender 18:30 Porto Rotondo tonight.',
-    reservations: 'None ashore tonight — dinner on deck 20:30.',
-    notes: 'Twin starboard empty. Keep made up.',
-    prepped: true,
-  },
-  {
-    id: 'tr2',
-    title: 'Owner weekend · Bonifacio window',
-    from: days(8),
-    to: days(11),
-    ownerAboard: true,
-    guests: [],
-    transfers: 'If Mistral stays light. Impeller spare first.',
-    reservations: 'TBC',
-    notes: 'Provisioning list already on the board.',
-    prepped: false,
-  },
-]
+export const tripsSeed: Trip[] = []
 
 export function opsSeed(): OpsState {
   return {

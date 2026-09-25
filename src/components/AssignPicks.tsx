@@ -51,7 +51,7 @@ export function AssignPicks({
             }}
           >
             <Avatar person={c} size="sm" />
-            <span>{c.name.split(' ')[0]}</span>
+            <span>{c.name}</span>
           </button>
         )
       })}

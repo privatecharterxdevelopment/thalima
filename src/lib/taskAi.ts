@@ -14,11 +14,12 @@ export type TaskDraft = {
 }
 
 const roleWords: { match: RegExp; id: string }[] = [
-  { match: /\b(eddy|max|captain|master|command)\b/i, id: 'eddy' },
-  { match: /\b(marco|engineer|engineering|plant)\b/i, id: 'marco' },
-  { match: /\b(sofia|stew|stewardess|interior|house|cabin)\b/i, id: 'sofia' },
-  { match: /\b(julien|chef|galley|cook|provision)\b/i, id: 'julien' },
-  { match: /\b(luca|bosun|deck|tender)\b/i, id: 'luca' },
+  { match: /\b(captain|master|command)\b/i, id: 'captain' },
+  { match: /\b(mate|first.?officer|bosun|deck|tender)\b/i, id: 'mate' },
+  { match: /\b(stew|stewardess|interior|house|cabin)\b/i, id: 'stew' },
+  { match: /\b(engineer|engineering|plant)\b/i, id: 'engineer' },
+  { match: /\b(chef|galley|cook|provision)\b/i, id: 'chef' },
+  { match: /\b(info|office|owner)\b/i, id: 'info' },
 ]
 
 function todayAt(hour: number, minute = 0) {
@@ -68,7 +69,7 @@ function parseAssignees(text: string, user: CrewMember): CrewMember[] {
     if (who && !found.some((f) => f.id === who.id)) found.push(who)
   }
   if (found.length) return found
-  if (user.level === 1) return [crew.find((c) => c.id === 'luca') ?? user]
+  if (user.level === 1) return [crew.find((c) => c.id === 'mate') ?? user]
   return [user]
 }
 

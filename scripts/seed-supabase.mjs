@@ -14,99 +14,106 @@ const env = Object.fromEntries(
 const url = env.VITE_SUPABASE_URL
 const key = env.SUPABASE_SERVICE_ROLE_KEY
 if (!url || !key) {
-  console.error('Missing Supabase env')
+  console.error('Missing VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
   process.exit(1)
 }
 
 const admin = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 
+/** Live CRM seats — emails are the source of truth. */
 const seats = [
   {
-    id: 'eddy',
-    name: 'Max Guzman',
+    id: 'captain',
+    name: 'Captain',
     title: 'Captain',
     role: 'captain',
     department: 'bridge',
+    departments: ['bridge'],
     level: 1,
     accounting: 'captain',
-    initials: 'MG',
+    initials: 'CA',
     watch: 'Command',
-    email: 'max@thalima.com',
-    phone: '+44 7700 900622',
-    photo: '/crew/crew-eddy.png',
+    email: 'captain@thalima.com',
+    phone: '',
+    photo: '',
     access: 'crew',
   },
   {
-    id: 'marco',
-    name: 'Marco Bellini',
-    title: 'Chief Engineer',
-    role: 'engineer',
-    department: 'engineering',
+    id: 'mate',
+    name: 'Mate',
+    title: 'First Mate',
+    role: 'first_officer',
+    department: 'deck',
+    departments: ['deck', 'bridge'],
     level: 2,
     accounting: 'submitter',
-    initials: 'MB',
-    watch: 'Day worker',
-    email: 'marco@thalima.com',
-    phone: '+39 333 124 8891',
-    photo: '/crew/crew-marco.png',
+    initials: 'MA',
+    watch: 'Deck / OOW',
+    email: 'mate@thalima.com',
+    phone: '',
+    photo: '',
     access: 'crew',
   },
   {
-    id: 'sofia',
-    name: 'Sofia Reyes',
-    title: 'Chief Stewardess',
+    id: 'stew',
+    name: 'Stew',
+    title: 'Stewardess',
     role: 'stewardess',
     department: 'interior',
+    departments: ['interior'],
     level: 2,
     accounting: 'accountant',
-    initials: 'SR',
+    initials: 'ST',
     watch: 'Interior',
-    email: 'sofia@thalima.com',
-    phone: '+34 612 448 201',
-    photo: '/crew/crew-sofia.png',
+    email: 'stew@thalima.com',
+    phone: '',
+    photo: '',
     access: 'crew',
   },
   {
-    id: 'julien',
-    name: 'Julien Moreau',
+    id: 'engineer',
+    name: 'Engineer',
+    title: 'Engineer',
+    role: 'engineer',
+    department: 'engineering',
+    departments: ['engineering'],
+    level: 2,
+    accounting: 'submitter',
+    initials: 'EN',
+    watch: 'Engineering',
+    email: 'engineer@thalima.com',
+    phone: '',
+    photo: '',
+    access: 'crew',
+  },
+  {
+    id: 'chef',
+    name: 'Chef',
     title: 'Chef',
     role: 'chef',
     department: 'galley',
+    departments: ['galley'],
     level: 2,
     accounting: 'submitter',
-    initials: 'JM',
+    initials: 'CH',
     watch: 'Galley',
-    email: 'julien@thalima.com',
-    phone: '+33 6 12 44 80 19',
-    photo: '/crew/crew-julien.png',
+    email: 'chef@thalima.com',
+    phone: '',
+    photo: '',
     access: 'crew',
   },
   {
-    id: 'luca',
-    name: 'Luca Ferrante',
-    title: 'Bosun',
-    role: 'bosun',
-    department: 'deck',
-    level: 2,
-    accounting: 'submitter',
-    initials: 'LF',
-    watch: 'Anchor watch 16–20',
-    email: 'luca@thalima.com',
-    phone: '+39 347 221 0944',
-    photo: '/crew/crew-luca.png',
-    access: 'crew',
-  },
-  {
-    id: 'owner',
-    name: 'Owner',
-    title: 'Owner',
+    id: 'info',
+    name: 'Info',
+    title: 'Office',
     role: 'captain',
     department: 'bridge',
+    departments: ['bridge'],
     level: 1,
     accounting: 'captain',
-    initials: 'OW',
-    watch: 'Owner',
-    email: 'owner@thalima.com',
+    initials: 'IN',
+    watch: 'Office',
+    email: 'info@thalima.com',
     phone: '',
     photo: '',
     access: 'owner',
@@ -114,14 +121,14 @@ const seats = [
 ]
 
 function passwordFor(person) {
-  if (person.id === 'owner') return 'thalima'
-  let pw = person.name.split(' ')[0].toLowerCase()
+  const local = person.email.split('@')[0]
+  let pw = local.toLowerCase()
   while (pw.length < 6) pw += '1'
   return pw
 }
 
 const { data: list } = await admin.auth.admin.listUsers({ perPage: 200 })
-const byEmail = new Map((list?.users ?? []).map((u) => [u.email, u.id]))
+const byEmail = new Map((list?.users ?? []).map((u) => [String(u.email ?? '').toLowerCase(), u.id]))
 
 for (const person of seats) {
   const email = person.email.toLowerCase()
@@ -138,6 +145,7 @@ for (const person of seats) {
       continue
     }
     authId = data.user.id
+    byEmail.set(email, authId)
   } else {
     const { error } = await admin.auth.admin.updateUserById(authId, { password, email_confirm: true })
     if (error) console.error('pw', email, error.message)
@@ -149,7 +157,7 @@ for (const person of seats) {
     title: person.title,
     role: person.role,
     department: person.department,
-    departments: [person.department],
+    departments: person.departments,
     level: person.level,
     accounting: person.accounting,
     initials: person.initials,
@@ -167,5 +175,15 @@ for (const person of seats) {
     ;({ error } = await admin.from('profiles').upsert(rest))
   }
   if (error) console.error('profile', email, error.message)
-  else console.log('ok', person.id)
+  else console.log('ok', person.id, email, 'pw=', password)
+}
+
+// Deactivate legacy demo seats if still present
+const liveIds = new Set(seats.map((s) => s.id))
+const { data: existing } = await admin.from('profiles').select('id, email')
+for (const row of existing ?? []) {
+  if (liveIds.has(row.id)) continue
+  const { error } = await admin.from('profiles').update({ active: false, updated_at: new Date().toISOString() }).eq('id', row.id)
+  if (error) console.error('deactivate', row.id, error.message)
+  else console.log('deactivated', row.id, row.email)
 }

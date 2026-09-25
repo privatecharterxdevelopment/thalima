@@ -2320,6 +2320,44 @@ html[data-theme='dark'] .bubble.mine .txt { color: #09090b; }
   gap: 24px;
 }
 
+.crew-tabs-panel {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.crew-tabs-panel > .ops-views,
+.crew-tabs-panel > .page-tabs {
+  flex-wrap: wrap;
+}
+
+.crew-profile-pane {
+  max-width: 42rem;
+}
+
+.crew-profile-head {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.crew-profile-head h2 {
+  margin: 0;
+}
+
+.crew-email {
+  margin: 0.35rem 0 0;
+  font-size: 14px;
+}
+
+.crew-email a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.crew-email a:hover {
+  text-decoration: underline;
+}
+
 .crew-profile {
   display: flex;
   flex-direction: column;
@@ -6887,6 +6925,7 @@ html[data-theme='dark'] .home-week button.is-on i { background: #0b1622; }
 .home-events li.is-engineer { --role: #f59e0b; }
 .home-events li.is-stewardess { --role: #f472b6; }
 .home-events li.is-chef { --role: #34d399; }
+.home-events li.is-first_officer { --role: #a78bfa; }
 .home-events li.is-bosun { --role: #a78bfa; }
 .home-events li.is-guests { --role: #e2e8f0; }
 

@@ -139,7 +139,7 @@ export function Board() {
                             title: d.title,
                             body: d.body,
                             department: eq?.department ?? 'engineering',
-                            assigneeId: who?.id ?? 'marco',
+                            assigneeId: who?.id ?? 'engineer',
                             urgency: d.status === 'open' ? 'now' : 'soon',
                             due: new Date(Date.now() + 4 * 3600_000).toISOString(),
                             kind: 'defect',
