@@ -580,13 +580,69 @@
   margin-bottom: 0;
 }
 
-.lp-boat-story .lp-lead,
-.lp-boat-copy .lp-close {
+.lp-boat-narrative {
+  margin: 0 0 5rem;
+}
+
+.lp-boat-narrative-head {
+  margin: 0 0 2.4rem;
+  text-align: center;
+}
+
+.lp-boat-narrative-head h2 {
+  margin: 0.45rem auto 0;
+  max-width: 22ch;
+  font-family: var(--serif);
+  font-size: clamp(2rem, 4.2vw, 3.2rem);
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+}
+
+.lp-boat-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.4rem 5rem;
+  align-items: start;
+}
+
+.lp-boat-cols p {
+  margin: 0 0 1.2rem;
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--lp-muted);
+  max-width: none;
+}
+
+.lp-boat-cols p:last-child {
+  margin-bottom: 0;
+}
+
+.lp-boat-cols .lp-lead {
+  font-size: 1.2rem;
+  line-height: 1.55;
   color: var(--lp-ink, #12151a);
 }
 
-.lp-boat-copy > .lp-eye {
-  margin-bottom: 0.5rem;
+.lp-boat-cols .lp-close {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--lp-ink, #12151a);
+  margin-top: 0.4rem;
+}
+
+.lp-boat-pair {
+  margin: 0 0 5rem;
+}
+
+.lp-boat-pair h2 {
+  margin: 0 0 1.2rem;
+  font-family: var(--serif);
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 600;
+  letter-spacing: -0.03em;
 }
 
 .lp-boat-head {
@@ -2198,6 +2254,14 @@ html.is-site.is-site-night #root {
     gap: 1.4rem;
   }
   .lp-boat-head h1 { white-space: normal; }
+  .lp-boat-cols,
+  .lp-boat-pair {
+    grid-template-columns: 1fr;
+    gap: 1.8rem;
+  }
+  .lp-boat-narrative-head {
+    text-align: left;
+  }
   .lp-bento {
     grid-template-columns: 1fr 1fr;
     grid-auto-rows: 180px;

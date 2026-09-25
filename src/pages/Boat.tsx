@@ -50,24 +50,6 @@ export function Boat() {
           <p>{t.boatLead}</p>
         </header>
 
-        <section className="lp-boat-copy lp-boat-story">
-          <p className="lp-lead">{t.introBody}</p>
-          <p>{t.introP1}</p>
-          <p>{t.introP2}</p>
-          <p>{t.introP3}</p>
-          <p>{t.introP4}</p>
-          <p className="lp-close">{t.introClose}</p>
-        </section>
-
-        <section className="lp-boat-copy">
-          <p className="lp-eye">{t.storyEye}</p>
-          <h2>{t.storyTitle}</h2>
-          <p>{t.storyP1}</p>
-          <p>{t.storyP2}</p>
-          <p>{t.storyP3}</p>
-          <p className="lp-close">{t.storyP4}</p>
-        </section>
-
         <div className="lp-bento">
           <figure className="lp-bento-video">
             <button type="button" onClick={() => setOpen(0)} aria-label={deckShots[0].caption}>
@@ -99,15 +81,39 @@ export function Boat() {
           ))}
         </div>
 
-        <section className="lp-boat-copy">
-          <h2>{t.deck}</h2>
-          <p>{t.deck1}</p>
-          <p>{t.deck2}</p>
+        <section className="lp-boat-narrative">
+          <div className="lp-boat-narrative-head">
+            <p className="lp-eye">{t.storyEye}</p>
+            <h2>{t.storyTitle}</h2>
+          </div>
+          <div className="lp-boat-cols">
+            <div>
+              <p className="lp-lead">{t.introBody}</p>
+              <p>{t.introP1}</p>
+              <p>{t.introP2}</p>
+              <p>{t.introP3}</p>
+            </div>
+            <div>
+              <p>{t.introP4}</p>
+              <p className="lp-close">{t.introClose}</p>
+              <p>{t.storyP1}</p>
+              <p>{t.storyP2}</p>
+              <p>{t.storyP3}</p>
+              <p className="lp-close">{t.storyP4}</p>
+            </div>
+          </div>
         </section>
 
-        <section className="lp-boat-copy" id="interior">
-          <h2>{t.interior}</h2>
-          <p>{t.interior1}</p>
+        <section className="lp-boat-cols lp-boat-pair">
+          <div>
+            <h2>{t.deck}</h2>
+            <p>{t.deck1}</p>
+            <p>{t.deck2}</p>
+          </div>
+          <div id="interior">
+            <h2>{t.interior}</h2>
+            <p>{t.interior1}</p>
+          </div>
         </section>
 
         <section className="lp-interior-gallery" aria-label={t.interior}>
