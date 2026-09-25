@@ -417,7 +417,20 @@
 }
 
 .lp-charter-page .lp-page-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.9fr);
+  align-items: end;
+  gap: 1.6rem 4rem;
+  max-width: none;
   margin-bottom: 2.6rem;
+}
+
+.lp-charter-page .lp-page-head h1 {
+  margin-bottom: 0;
+}
+
+.lp-charter-page .lp-page-head > p:last-child {
+  max-width: none;
 }
 
 .lp-page-media {
@@ -529,8 +542,15 @@
   object-position: center 54%;
 }
 
-.lp-charter-hero > img:not(.lp-contact-mark) {
-  object-position: center 16%;
+.lp-charter-hero {
+  height: min(62vh, 640px);
+  min-height: 22rem;
+  margin: 0 0 3.2rem;
+  border-radius: 8px;
+}
+
+.lp-charter-hero video {
+  object-position: center 42%;
 }
 
 .lp-contact-hero video::-webkit-media-controls,
@@ -1522,20 +1542,6 @@
   color: var(--lp-muted, #5c6570);
 }
 
-.lp-charter-hero-bleed {
-  margin-left: calc(-1 * clamp(1.2rem, 4vw, 2.4rem));
-  margin-right: calc(-1 * clamp(1.2rem, 4vw, 2.4rem));
-  width: calc(100% + 2 * clamp(1.2rem, 4vw, 2.4rem));
-  max-width: none;
-  border-radius: 0;
-  height: min(42vh, 380px);
-  min-height: 220px;
-}
-
-.lp-charter-hero-bleed video {
-  object-position: center 40%;
-}
-
 .lp-charter-gallery {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1563,13 +1569,19 @@
 
 .lp-charter-copy {
   display: grid;
-  gap: 0.85rem;
-  max-width: 58ch;
-  margin: 0 0 2.5rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 2.4rem 4.5rem;
+  max-width: none;
+  margin: 0 0 3.5rem;
 }
 
 .lp-charter-copy h2 {
-  margin-top: 1.2rem;
+  margin: 0 0 0.8rem;
+}
+
+.lp-charter-copy .lp-close {
+  grid-column: 1 / -1;
+  margin: 0;
 }
 
 .lp-intro .lp-eye {
@@ -2195,6 +2207,14 @@ html.is-site.is-site-night #root {
   }
   .lp-charter-gallery {
     grid-template-columns: 1fr 1fr;
+  }
+  .lp-charter-page .lp-page-head,
+  .lp-charter-copy {
+    grid-template-columns: 1fr;
+  }
+  .lp-charter-hero {
+    height: min(42vh, 360px);
+    min-height: 14rem;
   }
   .lp-interior-head,
   .lp-interior-head-inline {

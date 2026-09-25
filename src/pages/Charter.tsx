@@ -154,17 +154,18 @@ export function Charter() {
   return (
     <SiteChrome title={t.charter}>
       <article className="lp-page lp-charter-page">
-        <figure className="lp-contact-hero lp-charter-hero lp-charter-hero-bleed">
+        <figure className="lp-contact-hero lp-charter-hero">
           <video
             autoPlay
             muted
             loop
             playsInline
+            preload="auto"
             disablePictureInPicture
-            poster={yachtPhotos.sailing[1].src}
+            poster={yachtPhotos.owner[0].src}
             aria-hidden="true"
           >
-            <source src={yachtVideos.deckWalkthrough} type="video/mp4" />
+            <source src={yachtVideos.interiorWalkthrough} type="video/mp4" />
           </video>
           <img className="lp-contact-mark" src="/mark.png" alt="" />
         </figure>
@@ -197,12 +198,18 @@ export function Charter() {
         </div>
 
         <section className="lp-charter-copy">
-          <h2>{t.lifeTitle}</h2>
-          <p>{t.lifeBody}</p>
-          <h2>{t.tableTitle}</h2>
-          <p>{t.tableBody}</p>
-          <h2>{t.playTitle}</h2>
-          <p>{t.playBody}</p>
+          <article>
+            <h2>{t.lifeTitle}</h2>
+            <p>{t.lifeBody}</p>
+          </article>
+          <article>
+            <h2>{t.tableTitle}</h2>
+            <p>{t.tableBody}</p>
+          </article>
+          <article>
+            <h2>{t.playTitle}</h2>
+            <p>{t.playBody}</p>
+          </article>
           <p className="lp-close">{t.charterEnquire}</p>
         </section>
 
