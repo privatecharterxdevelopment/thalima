@@ -580,6 +580,15 @@
   margin-bottom: 0;
 }
 
+.lp-boat-story .lp-lead,
+.lp-boat-copy .lp-close {
+  color: var(--lp-ink, #12151a);
+}
+
+.lp-boat-copy > .lp-eye {
+  margin-bottom: 0.5rem;
+}
+
 .lp-boat-head {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
