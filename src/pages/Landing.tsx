@@ -30,11 +30,13 @@ export function Landing() {
     }
     tryPlay()
     el.addEventListener('loadeddata', tryPlay)
+    el.addEventListener('canplay', tryPlay)
     el.addEventListener('playing', () => {
       el.controls = false
     })
     return () => {
       el.removeEventListener('loadeddata', tryPlay)
+      el.removeEventListener('canplay', tryPlay)
     }
   }, [])
 
