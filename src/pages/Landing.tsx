@@ -46,6 +46,7 @@ export function Landing() {
         <div className="lp-hero-media">
           <video
             ref={heroRef}
+            key="deck-walkthrough-hero"
             autoPlay
             muted
             loop
@@ -56,7 +57,9 @@ export function Landing() {
             aria-hidden="true"
             tabIndex={-1}
           >
-            <source src={`${yachtVideos.deckHero}?v=1`} type="video/mp4" />
+            {/* Full Dropbox deck walkthrough as landing hero */}
+            <source src={`${yachtVideos.deckWalkthrough}?v=2`} type="video/mp4" />
+            <source src={`${yachtVideos.deckHero}?v=2`} type="video/mp4" />
           </video>
         </div>
       </section>
