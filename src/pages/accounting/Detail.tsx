@@ -69,10 +69,9 @@ export function AccountingDetail() {
             <h2>{exp.vendor || 'Untitled'}</h2>
           )}
 
-          {!exp.extraction.completed ? (
+          {exp.status === 'draft' && !exp.extraction.completed ? (
             <p className="acct-warn">
-              AI extraction is not connected. Nothing has been invented — enter the values from the original
-              receipt.
+              Enter the values from the original receipt before submitting.
             </p>
           ) : null}
           {warnings.length ? (

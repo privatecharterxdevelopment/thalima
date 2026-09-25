@@ -8,7 +8,6 @@ import {
   expenseCategoryLabel,
   expenseCategoryOptions,
   categoryOptionId,
-  extractionScore,
   formatEur,
   formatExpenseDate,
   missingExpenseFields,
@@ -27,8 +26,6 @@ export function ReceiptReview({ id, onClose }: { id: string; onClose: () => void
   const who = crew.find((c) => c.id === exp.uploadedBy)
   const edit = canEditExpense(user, exp)
   const missing = missingExpenseFields(exp)
-  const score = extractionScore(exp)
-  const analysed = exp.extraction.completed
   const canSubmit = edit && exp.status === 'draft' && !missing.length && Boolean(exp.approverId)
   const approvers = eligibleApprovers(exp.uploadedBy)
 
@@ -37,7 +34,7 @@ export function ReceiptReview({ id, onClose }: { id: string; onClose: () => void
       <aside className="acct-drawer" onClick={(e) => e.stopPropagation()}>
         <header>
           <div>
-            <p className="acct-kicker">{analysed ? 'Receipt analysed' : 'Receipt processing'}</p>
+            <p className="acct-kicker">{exp.source === 'manual' ? 'Manual entry' : 'Receipt uploaded'}</p>
             <h2>{exp.vendor || exp.receipt?.name || exp.ref}</h2>
           </div>
           <button className="btn ghost" type="button" onClick={onClose}>
@@ -53,9 +50,9 @@ export function ReceiptReview({ id, onClose }: { id: string; onClose: () => void
           <p className="acct-hint">No original attached.</p>
         )}
 
-        {!analysed ? (
+        {edit ? (
           <p className="acct-hint">
-            Fields stay empty until confirmed. AI extraction is prepared — values are not invented.
+            Fill in the fields from the original receipt, then submit for approval.
           </p>
         ) : null}
 
@@ -184,12 +181,6 @@ export function ReceiptReview({ id, onClose }: { id: string; onClose: () => void
             <dt>Vessel</dt>
             <dd>Thalima</dd>
           </div>
-          {analysed && score != null ? (
-            <div>
-              <dt>Confidence</dt>
-              <dd>{score}%</dd>
-            </div>
-          ) : null}
           <div>
             <dt>Notes</dt>
             <dd>

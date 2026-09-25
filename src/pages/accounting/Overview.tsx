@@ -101,22 +101,20 @@ export function AccountingOverview() {
           {inbox.length ? (
             <ul className="acct-inbox">
               {inbox.map((exp) => {
-                const analysed = exp.extraction.completed
+                const ready = Boolean(exp.vendor && exp.eurAmount != null)
                 return (
                   <li key={exp.id}>
                     <div>
                       <strong>{exp.receipt?.name || exp.vendor || exp.ref}</strong>
                       <span>
-                        {analysed && exp.eurAmount != null ? formatEur(exp.eurAmount) : 'Amount detection pending'}
+                        {exp.eurAmount != null ? formatEur(exp.eurAmount) : 'Enter amount'}
                       </span>
                       <em>{exp.category ? expenseCategoryLabel[exp.category] : 'Uncategorised'}</em>
-                      <em className={analysed ? 'is-ai' : 'is-wait'}>{analysed ? 'AI analysed' : 'Processing…'}</em>
+                      <em className={ready ? 'is-ai' : 'is-wait'}>{ready ? 'Ready to submit' : 'Needs review'}</em>
                     </div>
-                    {analysed ? (
-                      <button className="text-link" type="button" onClick={() => openReview(exp.id)}>
-                        Review →
-                      </button>
-                    ) : null}
+                    <button className="text-link" type="button" onClick={() => openReview(exp.id)}>
+                      Review →
+                    </button>
                   </li>
                 )
               })}
