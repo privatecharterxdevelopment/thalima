@@ -151,7 +151,9 @@ function seedIfEmpty(database: DatabaseSync) {
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
   `)
   for (const person of seedCrew) {
-    const password = person.name.split(' ')[0].toLowerCase()
+    const local = person.email.split('@')[0].toLowerCase()
+    let password = local
+    while (password.length < 6) password += '1'
     const { salt, hash } = hashPassword(password)
     insert.run(
       person.id,
@@ -166,34 +168,14 @@ function seedIfEmpty(database: DatabaseSync) {
       person.email,
       person.phone,
       person.photo,
-      'crew',
+      person.access === 'owner' ? 'owner' : 'crew',
       salt,
       hash,
       at,
       at,
     )
   }
-  const owner = hashPassword('thalima')
-  insert.run(
-    'owner',
-    'Owner',
-    'Owner',
-    'captain',
-    'bridge',
-    1,
-    'captain',
-    'OW',
-    'Owner',
-    'owner@thalima.com',
-    '',
-    '',
-    'owner',
-    owner.salt,
-    owner.hash,
-    at,
-    at,
-  )
-  writeLog(database, null, 'seed', 'Database seeded with crew seats and owner.')
+  writeLog(database, null, 'seed', 'Database seeded with live crew seats.')
 }
 
 function writeLog(database: DatabaseSync, actorId: string | null, action: string, detail: string) {

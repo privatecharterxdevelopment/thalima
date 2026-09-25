@@ -3,12 +3,12 @@ import { useStore } from '../store'
 import { Avatar } from '../components/Avatar'
 
 const bill = [
-  { time: '00–04', who: 'luca', note: 'Anchor. Transits every 15 min. Call Max if she walks.' },
-  { time: '04–08', who: 'eddy', note: 'Anchor + dawn. Engine room walk with coffee.' },
-  { time: '08–12', who: 'sofia', note: 'Cabins after breakfast. Luca on deck wash after guests aft.' },
-  { time: '12–16', who: 'marco', note: 'Plant. Watermaker if we run. Hydraulic mark.' },
-  { time: '16–20', who: 'luca', note: 'Anchor watch. Tender 18:30. Recover before dark.' },
-  { time: '20–24', who: 'eddy', note: 'Command. Dinner service support. Night orders.' },
+  { time: '00–04', who: 'mate', note: 'Anchor. Transits every 15 min. Call Captain if she walks.' },
+  { time: '04–08', who: 'captain', note: 'Anchor + dawn. Engine room walk.' },
+  { time: '08–12', who: 'stew', note: 'Cabins after breakfast. Mate on deck wash after guests aft.' },
+  { time: '12–16', who: 'engineer', note: 'Plant. Watermaker if we run. Hydraulic mark.' },
+  { time: '16–20', who: 'mate', note: 'Anchor watch. Tender runs. Recover before dark.' },
+  { time: '20–24', who: 'captain', note: 'Command. Dinner service support. Night orders.' },
 ]
 
 export function Watch() {
@@ -55,24 +55,16 @@ export function Watch() {
           </tr>
         </thead>
         <tbody>
-          {[
-            { id: 'eddy', work: '11 h 20', rest: '12 h 40', ok: true },
-            { id: 'marco', work: '9 h 00', rest: '15 h 00', ok: true },
-            { id: 'sofia', work: '12 h 30', rest: '11 h 30', ok: true },
-            { id: 'julien', work: '12 h 00', rest: '12 h 00', ok: true },
-            { id: 'luca', work: '10 h 45', rest: '13 h 15', ok: true },
-          ].map((r) => {
-            const who = crew.find((c) => c.id === r.id)
-            if (!who) return null
-            return (
-              <tr key={r.id}>
+          {crew
+            .filter((c) => c.access !== 'owner')
+            .map((who) => (
+              <tr key={who.id}>
                 <td>{who.name}</td>
-                <td>{r.work}</td>
-                <td>{r.rest}</td>
-                <td>{r.ok ? 'Clear' : 'Short'}</td>
+                <td>—</td>
+                <td>—</td>
+                <td>Clear</td>
               </tr>
-            )
-          })}
+            ))}
         </tbody>
       </table>
     </div>

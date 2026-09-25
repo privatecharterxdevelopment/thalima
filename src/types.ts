@@ -52,7 +52,7 @@ export type DueKind = 'time' | 'date' | 'hours' | 'recurring' | 'event'
 export type TaskEvent = 'before_departure' | 'before_guest_arrival' | 'after_anchoring' | 'before_crossing'
 export type TaskRecur = 'daily' | 'weekly'
 export type ChannelKind = 'all' | 'department' | 'dm'
-export type CalRole = 'captain' | 'engineer' | 'stewardess' | 'chef' | 'bosun'
+export type CalRole = 'captain' | 'first_officer' | 'engineer' | 'stewardess' | 'chef'
 
 export type CrewMember = {
   id: string
