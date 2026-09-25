@@ -3,6 +3,15 @@ import { Link } from 'react-router-dom'
 import { SiteChrome, useSiteCopy } from '../site'
 import '../landing.css'
 
+const interiorPreview = [
+  { src: '/yacht/interior/11.jpg', alt: 'Owner suite' },
+  { src: '/yacht/interior/18.jpg', alt: 'Saloon' },
+  { src: '/yacht/interior/08.jpg', alt: 'Twin cabin' },
+  { src: '/yacht/interior/05.jpg', alt: 'Galley' },
+  { src: '/yacht/interior/12.jpg', alt: 'Ensuite' },
+  { src: '/yacht/interior/14.jpg', alt: 'Owner study' },
+]
+
 export function Landing() {
   const { t } = useSiteCopy()
   const heroRef = useRef<HTMLVideoElement>(null)
@@ -30,7 +39,7 @@ export function Landing() {
 
   return (
     <SiteChrome>
-      <section className="lp-hero">
+      <section className="lp-hero lp-hero-bleed">
         <div className="lp-hero-media">
           <video
             ref={heroRef}
@@ -48,14 +57,21 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="lp-intro">
+      <section className="lp-intro lp-intro-long">
         <p className="lp-eye">Thalima</p>
         <h2>
           {t.introTitle1}
           <br />
           {t.introTitle2}
         </h2>
-        <p>{t.introBody}</p>
+        <div className="lp-prose">
+          <p className="lp-lead">{t.introBody}</p>
+          <p>{t.introP1}</p>
+          <p>{t.introP2}</p>
+          <p>{t.introP3}</p>
+          <p>{t.introP4}</p>
+          <p className="lp-close">{t.introClose}</p>
+        </div>
       </section>
 
       <section className="lp-cut" aria-hidden="true">
@@ -63,42 +79,95 @@ export function Landing() {
         <img src="/yacht/hero-sailing.jpg" alt="" loading="lazy" decoding="async" />
       </section>
 
-      <section className="lp-services">
-        <p className="lp-eye">{t.servicesEye}</p>
-        <h2>{t.servicesTitle}</h2>
+      <section className="lp-story">
+        <p className="lp-eye">{t.storyEye}</p>
+        <h2>{t.storyTitle}</h2>
+        <div className="lp-prose">
+          <p>{t.storyP1}</p>
+          <p>{t.storyP2}</p>
+          <p>{t.storyP3}</p>
+          <p className="lp-close">{t.storyP4}</p>
+        </div>
+      </section>
 
-        <article className="lp-svc">
-          <img src="/yacht/cockpit-sunpads.jpg" alt="Guests on the sunpads" loading="lazy" decoding="async" />
-          <div>
-            <h3>{t.svc1Title}</h3>
-            <p>{t.svc1Body}</p>
-            <Link to="/charter">
-              {t.svc1Cta} <span>↗</span>
-            </Link>
-          </div>
-        </article>
+      <section className="lp-waters">
+        <div className="lp-waters-head">
+          <p className="lp-eye">{t.watersEye}</p>
+          <h2>{t.watersTitle}</h2>
+        </div>
+        <div className="lp-waters-grid">
+          <article>
+            <img src="/yacht/sail-beam.jpg" alt="" loading="lazy" decoding="async" />
+            <h3>{t.medTitle}</h3>
+            <p>{t.medBody}</p>
+          </article>
+          <article>
+            <img src="/yacht/sail-aerial-lagoon.jpg" alt="" loading="lazy" decoding="async" />
+            <h3>{t.caribTitle}</h3>
+            <p>{t.caribBody}</p>
+          </article>
+        </div>
+        <p className="lp-waters-note">{t.watersNote}</p>
+      </section>
 
-        <article className="lp-svc lp-svc-flip">
-          <img src="/yacht/cockpit-night.jpg" alt="Evening in the cockpit" loading="lazy" decoding="async" />
-          <div>
-            <h3>{t.svc2Title}</h3>
-            <p>{t.svc2Body}</p>
-            <Link to="/boat">
-              {t.svc2Cta} <span>↗</span>
-            </Link>
-          </div>
-        </article>
+      <section className="lp-charter-block">
+        <p className="lp-eye">{t.charterBlockEye}</p>
+        <h2>{t.charterBlockTitle}</h2>
+        <p className="lp-lead">{t.charterBlockLead}</p>
+        <div className="lp-charter-points">
+          <article>
+            <h3>{t.lifeTitle}</h3>
+            <p>{t.lifeBody}</p>
+          </article>
+          <article>
+            <h3>{t.tableTitle}</h3>
+            <p>{t.tableBody}</p>
+          </article>
+          <article>
+            <h3>{t.playTitle}</h3>
+            <p>{t.playBody}</p>
+          </article>
+        </div>
+        <p className="lp-close">{t.charterEnquire}</p>
+        <div className="lp-pills" style={{ marginTop: '2rem' }}>
+          <Link className="lp-btn" to="/charter">
+            {t.charter}
+          </Link>
+          <Link className="lp-btn lp-btn-ghost" to="/boat">
+            {t.theBoat}
+          </Link>
+        </div>
+      </section>
 
-        <article className="lp-svc">
-          <img src="/yacht/saloon.jpg" alt="Saloon after the 2024 refit" loading="lazy" decoding="async" />
+      <section className="lp-interior-strip">
+        <div className="lp-interior-head">
           <div>
-            <h3>{t.svc3Title}</h3>
-            <p>{t.svc3Body}</p>
-            <Link to="/brochure">
-              {t.svc3Cta} <span>↗</span>
-            </Link>
+            <p className="lp-eye">{t.interiorEye}</p>
+            <h2>{t.interiorTitle}</h2>
           </div>
-        </article>
+          <p>{t.interiorLead}</p>
+        </div>
+        <div className="lp-interior-grid">
+          {interiorPreview.map((shot) => (
+            <Link key={shot.src} to="/boat#interior" className="lp-interior-tile">
+              <img src={shot.src} alt={shot.alt} loading="lazy" decoding="async" />
+            </Link>
+          ))}
+        </div>
+        <p className="lp-page-cta" style={{ paddingInline: 0 }}>
+          <Link className="lp-btn" to="/boat#interior">
+            {t.interior}
+          </Link>
+        </p>
+      </section>
+
+      <section className="lp-manage">
+        <p className="lp-eye">{t.manageEye}</p>
+        <h2>{t.manageTitle}</h2>
+        <div className="lp-prose">
+          <p>{t.manageP1}</p>
+          <p>{t.manageP2}</p>
+        </div>
       </section>
 
       <section className="lp-dark">
@@ -128,8 +197,8 @@ export function Landing() {
           </div>
 
           <div className="lp-cards">
-            <Link className="lp-card" to="/boat">
-              <img src="/yacht/owner-cabin.jpg" alt={t.ownerSuite} loading="lazy" decoding="async" />
+            <Link className="lp-card" to="/boat#interior">
+              <img src="/yacht/interior/11.jpg" alt={t.ownerSuite} loading="lazy" decoding="async" />
               <div>
                 <span>{t.ownerSuite}</span>
                 <b>{t.ownerSuiteB}</b>
@@ -152,18 +221,18 @@ export function Landing() {
                 <p>{t.eveningP}</p>
               </div>
             </Link>
-            <Link className="lp-card" to="/brochure">
-              <img src="/yacht/lounge.jpg" alt={t.lounge} loading="lazy" decoding="async" />
+            <Link className="lp-card" to="/boat#interior">
+              <img src="/yacht/interior/18.jpg" alt={t.lounge} loading="lazy" decoding="async" />
               <div>
                 <span>{t.lounge}</span>
                 <b>{t.loungeB}</b>
                 <p>{t.loungeP}</p>
               </div>
             </Link>
-            <Link className="lp-card" to="/specs">
-              <img src="/yacht/saloon.jpg" alt={t.saloon} loading="lazy" decoding="async" />
+            <Link className="lp-card" to="/boat#interior">
+              <img src="/yacht/interior/08.jpg" alt={t.saloon} loading="lazy" decoding="async" />
               <div>
-                <span>{t.saloon}</span>
+                <span>{t.interior}</span>
                 <b>{t.saloonB}</b>
                 <p>{t.saloonP}</p>
               </div>
