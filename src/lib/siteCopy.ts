@@ -1,3 +1,5 @@
+import { sync } from './siteCopySync'
+
 export const LANGS = [
   { id: 'en', name: 'English', flag: '🇬🇧' },
   { id: 'fr', name: 'French', flag: '🇫🇷' },
@@ -1200,6 +1202,10 @@ export const copy: Record<Lang, SiteCopy> = {
     privacy2: 'クッキーバナーはブラウザに一つの値——同意または必須——を書き、再表示しません。分析ピクセル、広告、第三者トラッカーはありません。',
     privacy3: 'クルーのログインは別アプリです。クルーの写真と名前は公開サイトに出しません。',
   },
+}
+
+for (const lang of ['fr', 'it', 'es', 'pt', 'ru', 'zh', 'ja'] as const) {
+  Object.assign(copy[lang], sync[lang])
 }
 
 export const LANG_KEY = 'thalima.lp.lang'
