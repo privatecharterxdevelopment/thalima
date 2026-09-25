@@ -1,89 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { allDeckShots, allInteriorShots, yachtVideos, type YachtShot } from '../data/yachtMedia'
 import { SiteChrome, useSiteCopy } from '../site'
 import '../landing.css'
 
-type Shot = {
-  src: string
-  alt: string
-  caption: string
-  span?: 'wide' | 'tall'
-  group?: 'deck' | 'interior'
-}
-
-const deckShots: Shot[] = [
-  {
-    src: '/yacht/sail-overhead.jpg',
-    alt: 'Thalima under sail, seen from above',
-    caption: 'Under sail',
-    span: 'wide',
-    group: 'deck',
-  },
-  {
-    src: '/yacht/hero-sailing.jpg',
-    alt: 'Thalima sailing, guests on deck',
-    caption: 'On deck',
-    span: 'tall',
-    group: 'deck',
-  },
-  {
-    src: '/yacht/sail-beam.jpg',
-    alt: 'Thalima in profile on a calm evening',
-    caption: 'Profile',
-    group: 'deck',
-  },
-  {
-    src: '/yacht/sail-aerial-lagoon.jpg',
-    alt: 'Thalima at anchor over turquoise water',
-    caption: 'At anchor',
-    group: 'deck',
-  },
-  {
-    src: '/yacht/cockpit-sunpads.jpg',
-    alt: 'Sunpads and twin wheels, looking forward',
-    caption: 'Sunpads',
-    group: 'deck',
-  },
-  {
-    src: '/yacht/cockpit-table.jpg',
-    alt: 'Guest cockpit set for a meal, boom awning up',
-    caption: 'Guest cockpit',
-    span: 'wide',
-    group: 'deck',
-  },
-  {
-    src: '/yacht/cockpit-night.jpg',
-    alt: 'Evening in the cockpit',
-    caption: 'Evening',
-    group: 'deck',
-  },
-]
-
-const interiorShots: Shot[] = [
-  { src: '/yacht/interior/11.jpg', alt: 'Owner suite with island berth', caption: 'Owner suite', span: 'wide', group: 'interior' },
-  { src: '/yacht/interior/17.jpg', alt: 'Owner suite under skylights', caption: 'Owner suite', span: 'tall', group: 'interior' },
-  { src: '/yacht/interior/14.jpg', alt: 'Owner study with quilted chair', caption: 'Owner study', group: 'interior' },
-  { src: '/yacht/interior/15.jpg', alt: 'Owner suite looking toward ensuite', caption: 'Owner suite', group: 'interior' },
-  { src: '/yacht/interior/16.jpg', alt: 'Owner suite with desk and sofa', caption: 'Owner suite', span: 'wide', group: 'interior' },
-  { src: '/yacht/interior/13.jpg', alt: 'Owner suite with striped bedding', caption: 'Owner suite', group: 'interior' },
-  { src: '/yacht/interior/19.jpg', alt: 'Owner suite walkway and desk', caption: 'Owner suite', group: 'interior' },
-  { src: '/yacht/interior/12.jpg', alt: 'Ensuite with double vanity', caption: 'Ensuite', span: 'wide', group: 'interior' },
-  { src: '/yacht/interior/08.jpg', alt: 'Twin guest cabin', caption: 'Twin cabin', group: 'interior' },
-  { src: '/yacht/interior/09.jpg', alt: 'Twin guest cabin with blue throws', caption: 'Twin cabin', group: 'interior' },
-  { src: '/yacht/interior/10.jpg', alt: 'Twin guest cabin with terracotta throws', caption: 'Twin cabin', span: 'wide', group: 'interior' },
-  { src: '/yacht/interior/07.jpg', alt: 'Interior companionway', caption: 'Companionway', group: 'interior' },
-  { src: '/yacht/interior/18.jpg', alt: 'Saloon and lounge after the 2024 refit', caption: 'Saloon', span: 'wide', group: 'interior' },
-  { src: '/yacht/interior/01.jpg', alt: 'Galley and systems station', caption: 'Galley', group: 'interior' },
-  { src: '/yacht/interior/03.jpg', alt: 'Galley island and range', caption: 'Galley', group: 'interior' },
-  { src: '/yacht/interior/05.jpg', alt: 'Galley with coffee station', caption: 'Galley', group: 'interior' },
-  { src: '/yacht/interior/06.jpg', alt: 'Galley looking aft to fridge', caption: 'Galley', span: 'wide', group: 'interior' },
-  { src: '/yacht/interior/02.jpg', alt: 'Navigation and crew station', caption: 'Navigation', group: 'interior' },
-  { src: '/yacht/interior/04.jpg', alt: 'Galley worktop', caption: 'Galley', group: 'interior' },
-  { src: '/yacht/lounge.jpg', alt: 'Lounge seating', caption: 'Lounge', group: 'interior' },
-]
-
-const shots: Shot[] = [...deckShots, ...interiorShots]
+const deckShots = allDeckShots()
+const interiorShots = allInteriorShots()
+const shots: YachtShot[] = [...deckShots, ...interiorShots]
 
 export function Boat() {
   const { t } = useSiteCopy()
@@ -135,13 +59,13 @@ export function Boat() {
                 loop
                 playsInline
                 disablePictureInPicture
-                poster="/yacht/sail-overhead.jpg"
+                poster={deckShots[0].src}
                 aria-hidden="true"
                 tabIndex={-1}
               >
-                <source src="/yacht/sail.mp4" type="video/mp4" />
+                <source src={yachtVideos.deckWalkthrough} type="video/mp4" />
               </video>
-              <span>{deckShots[0].caption}</span>
+              <span>Deck walkthrough</span>
             </button>
           </figure>
           {deckShots.slice(1).map((shot, i) => (
@@ -176,6 +100,19 @@ export function Boat() {
             </div>
             <p>{t.interiorLead}</p>
           </div>
+
+          <figure className="lp-walkthrough">
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              poster={interiorShots[0]?.src}
+            >
+              <source src={yachtVideos.interiorWalkthrough} type="video/mp4" />
+            </video>
+            <figcaption>Interior walkthrough</figcaption>
+          </figure>
+
           <div className="lp-bento lp-bento-interior">
             {interiorShots.map((shot, i) => (
               <button

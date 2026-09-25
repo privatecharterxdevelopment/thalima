@@ -1459,6 +1459,28 @@
   padding-top: 2rem;
 }
 
+.lp-walkthrough {
+  margin: 0 0 1.4rem;
+  overflow: hidden;
+  background: #0b1b2c;
+}
+
+.lp-walkthrough video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #0b1b2c;
+}
+
+.lp-walkthrough figcaption {
+  padding: 0.75rem 0.2rem 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--lp-muted, #5c6570);
+}
+
 .lp-charter-hero-bleed {
   margin-left: calc(-1 * clamp(1.2rem, 4vw, 2.4rem));
   margin-right: calc(-1 * clamp(1.2rem, 4vw, 2.4rem));

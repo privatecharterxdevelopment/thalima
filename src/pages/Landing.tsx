@@ -1,15 +1,16 @@
 import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { yachtPhotos, yachtVideos } from '../data/yachtMedia'
 import { SiteChrome, useSiteCopy } from '../site'
 import '../landing.css'
 
 const interiorPreview = [
-  { src: '/yacht/interior/11.jpg', alt: 'Owner suite' },
-  { src: '/yacht/interior/18.jpg', alt: 'Saloon' },
-  { src: '/yacht/interior/08.jpg', alt: 'Twin cabin' },
-  { src: '/yacht/interior/05.jpg', alt: 'Galley' },
-  { src: '/yacht/interior/12.jpg', alt: 'Ensuite' },
-  { src: '/yacht/interior/14.jpg', alt: 'Owner study' },
+  yachtPhotos.owner[0],
+  yachtPhotos.saloon[1],
+  yachtPhotos.cabins[0],
+  yachtPhotos.galley[1],
+  yachtPhotos.owner[5],
+  yachtPhotos.owner[2],
 ]
 
 export function Landing() {
@@ -48,11 +49,11 @@ export function Landing() {
             loop
             playsInline
             disablePictureInPicture
-            poster="/yacht/hero.jpg"
+            poster={yachtPhotos.sailing[1].src}
             aria-hidden="true"
             tabIndex={-1}
           >
-            <source src="/yacht/hero.mp4?v=2" type="video/mp4" />
+            <source src={yachtVideos.deckWalkthrough} type="video/mp4" />
           </video>
         </div>
       </section>
@@ -75,8 +76,8 @@ export function Landing() {
       </section>
 
       <section className="lp-cut" aria-hidden="true">
-        <img src="/yacht/sail-aerial-lagoon.jpg" alt="" loading="lazy" decoding="async" />
-        <img src="/yacht/hero-sailing.jpg" alt="" loading="lazy" decoding="async" />
+        <img src={yachtPhotos.sailing[5].src} alt="" loading="lazy" decoding="async" />
+        <img src={yachtPhotos.sailing[0].src} alt="" loading="lazy" decoding="async" />
       </section>
 
       <section className="lp-story">
@@ -97,12 +98,12 @@ export function Landing() {
         </div>
         <div className="lp-waters-grid">
           <article>
-            <img src="/yacht/sail-beam.jpg" alt="" loading="lazy" decoding="async" />
+            <img src={yachtPhotos.sailing[2].src} alt="" loading="lazy" decoding="async" />
             <h3>{t.medTitle}</h3>
             <p>{t.medBody}</p>
           </article>
           <article>
-            <img src="/yacht/sail-aerial-lagoon.jpg" alt="" loading="lazy" decoding="async" />
+            <img src={yachtPhotos.deck[0].src} alt="" loading="lazy" decoding="async" />
             <h3>{t.caribTitle}</h3>
             <p>{t.caribBody}</p>
           </article>
@@ -172,7 +173,7 @@ export function Landing() {
 
       <section className="lp-dark">
         <div className="lp-banner">
-          <img src="/yacht/sail-overhead.jpg" alt="Thalima under sail" loading="lazy" decoding="async" />
+          <img src={yachtPhotos.sailing[6].src} alt="Thalima under sail" loading="lazy" decoding="async" />
           <h2>{t.banner}</h2>
         </div>
 
@@ -198,7 +199,7 @@ export function Landing() {
 
           <div className="lp-cards">
             <Link className="lp-card" to="/boat#interior">
-              <img src="/yacht/interior/11.jpg" alt={t.ownerSuite} loading="lazy" decoding="async" />
+              <img src={yachtPhotos.owner[0].src} alt={t.ownerSuite} loading="lazy" decoding="async" />
               <div>
                 <span>{t.ownerSuite}</span>
                 <b>{t.ownerSuiteB}</b>
@@ -206,7 +207,7 @@ export function Landing() {
               </div>
             </Link>
             <Link className="lp-card lp-card-tall" to="/charter">
-              <img src="/yacht/hero-sailing.jpg" alt={t.underSail} loading="lazy" decoding="async" />
+              <img src={yachtPhotos.sailing[1].src} alt={t.underSail} loading="lazy" decoding="async" />
               <div>
                 <span>{t.underSail}</span>
                 <b>{t.underSailB}</b>
@@ -214,7 +215,7 @@ export function Landing() {
               </div>
             </Link>
             <Link className="lp-card" to="/boat">
-              <img src="/yacht/cockpit-night.jpg" alt={t.evening} loading="lazy" decoding="async" />
+              <img src={yachtPhotos.deck[4].src} alt={t.evening} loading="lazy" decoding="async" />
               <div>
                 <span>{t.evening}</span>
                 <b>{t.eveningB}</b>
@@ -222,7 +223,7 @@ export function Landing() {
               </div>
             </Link>
             <Link className="lp-card" to="/boat#interior">
-              <img src="/yacht/interior/18.jpg" alt={t.lounge} loading="lazy" decoding="async" />
+              <img src={yachtPhotos.lounge[0].src} alt={t.lounge} loading="lazy" decoding="async" />
               <div>
                 <span>{t.lounge}</span>
                 <b>{t.loungeB}</b>
@@ -230,9 +231,9 @@ export function Landing() {
               </div>
             </Link>
             <Link className="lp-card" to="/boat#interior">
-              <img src="/yacht/interior/08.jpg" alt={t.saloon} loading="lazy" decoding="async" />
+              <img src={yachtPhotos.saloon[2].src} alt={t.saloon} loading="lazy" decoding="async" />
               <div>
-                <span>{t.interior}</span>
+                <span>{t.saloon}</span>
                 <b>{t.saloonB}</b>
                 <p>{t.saloonP}</p>
               </div>
@@ -251,19 +252,19 @@ export function Landing() {
         </div>
         <div className="lp-posts">
           <Link to="/brochure">
-            <img src="/yacht/sail-aerial-lagoon.jpg" alt="" loading="lazy" decoding="async" />
+            <img src={yachtPhotos.sailing[5].src} alt="" loading="lazy" decoding="async" />
             <span>{t.postBrochure}</span>
             <h3>{t.postBrochureTitle}</h3>
             <em>{t.readMore}</em>
           </Link>
           <Link to="/specs">
-            <img src="/yacht/sail-beam.jpg" alt="" loading="lazy" decoding="async" />
+            <img src={yachtPhotos.ga.src} alt="" loading="lazy" decoding="async" />
             <span>{t.postSpec}</span>
             <h3>{t.postSpecTitle}</h3>
             <em>{t.readMore}</em>
           </Link>
           <Link to="/charter">
-            <img src="/yacht/cockpit-sunpads.jpg" alt="" loading="lazy" decoding="async" />
+            <img src={yachtPhotos.deck[5].src} alt="" loading="lazy" decoding="async" />
             <span>{t.charter}</span>
             <h3>{t.postCharterTitle}</h3>
             <em>{t.writeToUs}</em>

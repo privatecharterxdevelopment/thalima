@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Check } from 'lucide-react'
+import { yachtPhotos, yachtVideos } from '../data/yachtMedia'
 import { SiteChrome, CHARTER_TO, useSiteCopy } from '../site'
 import { yacht } from '../data/yacht'
 import '../landing.css'
@@ -160,10 +161,10 @@ export function Charter() {
             loop
             playsInline
             disablePictureInPicture
-            poster="/yacht/charter.jpg?v=3"
+            poster={yachtPhotos.sailing[1].src}
             aria-hidden="true"
           >
-            <source src="/yacht/charter.mp4" type="video/mp4" />
+            <source src={yachtVideos.deckWalkthrough} type="video/mp4" />
           </video>
           <img className="lp-contact-mark" src="/mark.png" alt="" />
         </figure>
@@ -176,14 +177,18 @@ export function Charter() {
 
         <div className="lp-charter-gallery">
           {[
-            '/yacht/interior/11.jpg',
-            '/yacht/interior/18.jpg',
-            '/yacht/cockpit-sunpads.jpg',
-            '/yacht/interior/08.jpg',
-            '/yacht/interior/12.jpg',
-            '/yacht/hero-sailing.jpg',
-            '/yacht/interior/14.jpg',
-            '/yacht/interior/05.jpg',
+            yachtPhotos.owner[0].src,
+            yachtPhotos.saloon[1].src,
+            yachtPhotos.deck[5].src,
+            yachtPhotos.cabins[0].src,
+            yachtPhotos.owner[5].src,
+            yachtPhotos.sailing[0].src,
+            yachtPhotos.owner[2].src,
+            yachtPhotos.galley[1].src,
+            yachtPhotos.lounge[0].src,
+            yachtPhotos.cabins[3].src,
+            yachtPhotos.deck[0].src,
+            yachtPhotos.sailing[5].src,
           ].map((src) => (
             <Link key={src} to="/boat#interior" className="lp-charter-shot">
               <img src={src} alt="" loading="lazy" decoding="async" />
