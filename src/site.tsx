@@ -20,12 +20,12 @@ import {
 } from './lib/siteCopy'
 import { useStore } from './store'
 
-export const CHARTER_TO = 'charter@thalima.com'
+export const CHARTER_TO = 'info@thalima.com'
 export const MAIL = `mailto:${CHARTER_TO}?subject=Thalima%20charter`
 export const BROCHURE = '/yacht/brochure.pdf'
 export const SPEC = '/yacht/spec.pdf'
-export const PHONE = '+390105704035'
-export const PHONE_LABEL = '+39 010 570 4035'
+export const PHONE = '+34666006321'
+export const PHONE_LABEL = '+34 666 006 321'
 export const YOUTUBE = 'https://www.youtube.com/watch?v=dnsURdmF81M'
 
 const COOKIE_KEY = 'thalima.cookie'
