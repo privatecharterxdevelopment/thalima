@@ -42,7 +42,7 @@ export function Landing() {
 
   return (
     <SiteChrome>
-      <section className="lp-hero lp-hero-bleed">
+      <section className="lp-hero">
         <div className="lp-hero-media">
           <video
             ref={heroRef}
@@ -57,28 +57,19 @@ export function Landing() {
             aria-hidden="true"
             tabIndex={-1}
           >
-            {/* Full Dropbox deck walkthrough as landing hero */}
             <source src={`${yachtVideos.deckWalkthrough}?v=2`} type="video/mp4" />
-            <source src={`${yachtVideos.deckHero}?v=2`} type="video/mp4" />
           </video>
         </div>
       </section>
 
-      <section className="lp-intro lp-intro-long">
+      <section className="lp-intro">
         <p className="lp-eye">Thalima</p>
         <h2>
           {t.introTitle1}
           <br />
           {t.introTitle2}
         </h2>
-        <div className="lp-prose">
-          <p className="lp-lead">{t.introBody}</p>
-          <p>{t.introP1}</p>
-          <p>{t.introP2}</p>
-          <p>{t.introP3}</p>
-          <p>{t.introP4}</p>
-          <p className="lp-close">{t.introClose}</p>
-        </div>
+        <p>{t.introBody}</p>
       </section>
 
       <section className="lp-cut" aria-hidden="true">
@@ -86,64 +77,42 @@ export function Landing() {
         <img src={yachtPhotos.sailing[0].src} alt="" loading="lazy" decoding="async" />
       </section>
 
-      <section className="lp-story">
-        <p className="lp-eye">{t.storyEye}</p>
-        <h2>{t.storyTitle}</h2>
-        <div className="lp-prose">
-          <p>{t.storyP1}</p>
-          <p>{t.storyP2}</p>
-          <p>{t.storyP3}</p>
-          <p className="lp-close">{t.storyP4}</p>
-        </div>
-      </section>
+      <section className="lp-services">
+        <p className="lp-eye">{t.servicesEye}</p>
+        <h2>{t.servicesTitle}</h2>
 
-      <section className="lp-waters">
-        <div className="lp-waters-head">
-          <p className="lp-eye">{t.watersEye}</p>
-          <h2>{t.watersTitle}</h2>
-        </div>
-        <div className="lp-waters-grid">
-          <article>
-            <img src={yachtPhotos.sailing[2].src} alt="" loading="lazy" decoding="async" />
-            <h3>{t.medTitle}</h3>
-            <p>{t.medBody}</p>
-          </article>
-          <article>
-            <img src={yachtPhotos.deck[0].src} alt="" loading="lazy" decoding="async" />
-            <h3>{t.caribTitle}</h3>
-            <p>{t.caribBody}</p>
-          </article>
-        </div>
-        <p className="lp-waters-note">{t.watersNote}</p>
-      </section>
+        <article className="lp-svc">
+          <img src={yachtPhotos.deck[5].src} alt="Guests in the cockpit" loading="lazy" decoding="async" />
+          <div>
+            <h3>{t.svc1Title}</h3>
+            <p>{t.svc1Body}</p>
+            <Link to="/charter">
+              {t.svc1Cta} <span>↗</span>
+            </Link>
+          </div>
+        </article>
 
-      <section className="lp-charter-block">
-        <p className="lp-eye">{t.charterBlockEye}</p>
-        <h2>{t.charterBlockTitle}</h2>
-        <p className="lp-lead">{t.charterBlockLead}</p>
-        <div className="lp-charter-points">
-          <article>
-            <h3>{t.lifeTitle}</h3>
-            <p>{t.lifeBody}</p>
-          </article>
-          <article>
-            <h3>{t.tableTitle}</h3>
-            <p>{t.tableBody}</p>
-          </article>
-          <article>
-            <h3>{t.playTitle}</h3>
-            <p>{t.playBody}</p>
-          </article>
-        </div>
-        <p className="lp-close">{t.charterEnquire}</p>
-        <div className="lp-pills" style={{ marginTop: '2rem' }}>
-          <Link className="lp-btn" to="/charter">
-            {t.charter}
-          </Link>
-          <Link className="lp-btn lp-btn-ghost" to="/boat">
-            {t.theBoat}
-          </Link>
-        </div>
+        <article className="lp-svc lp-svc-flip">
+          <img src={yachtPhotos.deck[4].src} alt="Evening on deck" loading="lazy" decoding="async" />
+          <div>
+            <h3>{t.svc2Title}</h3>
+            <p>{t.svc2Body}</p>
+            <Link to="/boat">
+              {t.svc2Cta} <span>↗</span>
+            </Link>
+          </div>
+        </article>
+
+        <article className="lp-svc">
+          <img src={yachtPhotos.saloon[2].src} alt="Saloon after the 2024 refit" loading="lazy" decoding="async" />
+          <div>
+            <h3>{t.svc3Title}</h3>
+            <p>{t.svc3Body}</p>
+            <Link to="/brochure">
+              {t.svc3Cta} <span>↗</span>
+            </Link>
+          </div>
+        </article>
       </section>
 
       <section className="lp-interior-strip">

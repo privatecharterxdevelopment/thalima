@@ -50,6 +50,24 @@ export function Boat() {
           <p>{t.boatLead}</p>
         </header>
 
+        <section className="lp-boat-copy lp-boat-story">
+          <p className="lp-lead">{t.introBody}</p>
+          <p>{t.introP1}</p>
+          <p>{t.introP2}</p>
+          <p>{t.introP3}</p>
+          <p>{t.introP4}</p>
+          <p className="lp-close">{t.introClose}</p>
+        </section>
+
+        <section className="lp-boat-copy">
+          <p className="lp-eye">{t.storyEye}</p>
+          <h2>{t.storyTitle}</h2>
+          <p>{t.storyP1}</p>
+          <p>{t.storyP2}</p>
+          <p>{t.storyP3}</p>
+          <p className="lp-close">{t.storyP4}</p>
+        </section>
+
         <div className="lp-bento">
           <figure className="lp-bento-video">
             <button type="button" onClick={() => setOpen(0)} aria-label={deckShots[0].caption}>

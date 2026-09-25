@@ -42,10 +42,10 @@ const en = {
     'We use a single cookie to remember this choice. Nothing else is tracked unless you accept.',
   cookieAccept: 'Accept',
   cookieEssential: 'Essential only',
-  introTitle1: 'The Southern Wind 110.',
-  introTitle2: 'One of a kind.',
+  introTitle1: 'A Southern Wind 110.',
+  introTitle2: 'One quiet week in the Med.',
   introBody:
-    'There are yachts you charter, and there are yachts you remember. Thalima is one you remember.',
+    'Built in Cape Town, drawn by Farr, dressed by Nauta. We take a short list of weeks — Italy, Sardinia, the South of France — and the same five who sail her. Charter, crew, the boat. Under one roof, without the handoffs.',
   introP1:
     'She is the only 110-footer Southern Wind has ever built. Farr Yacht Design drew her lines, Nauta Design shaped her form, and craftsmen in Cape Town built her. The result is 33.65 metres of flush-decked carbon composite that sails like a thoroughbred and cruises with the calm of a private villa at sea.',
   introP2:
@@ -55,6 +55,7 @@ const en = {
   introP4:
     'Five dedicated crew look after her and her guests: Captain, Mate, Engineer, Stewardess and Chef. Her seasons follow the sun, from the Mediterranean in summer to the Caribbean in winter.',
   introClose: 'Thalima. Where performance meets peace.',
+
   storyEye: 'Her Story',
   storyTitle: 'A legend from the southern tip of Africa',
   storyP1:
