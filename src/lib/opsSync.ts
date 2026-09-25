@@ -50,7 +50,7 @@ export function pickOps(snap: SharedOps | AppSnapshot): SharedOps {
 
 export function opsFromUnknown(raw: Record<string, unknown>): SharedOps | null {
   if (!Array.isArray(raw.tasks) || !raw.ops || typeof raw.ops !== 'object') return null
-  return {
+  return sanitizeShared({
     tasks: raw.tasks as SharedOps['tasks'],
     messages: (raw.messages as SharedOps['messages']) ?? [],
     log: (raw.log as SharedOps['log']) ?? [],
@@ -63,6 +63,45 @@ export function opsFromUnknown(raw: Record<string, unknown>): SharedOps | null {
     ops: raw.ops as OpsState,
     expenses: (raw.expenses as SharedOps['expenses']) ?? [],
     roster: (raw.roster as SharedOps['roster']) ?? [],
+  })
+}
+
+/** Drop legacy Sardinia / Adler demo rows so stale clients cannot re-seed the board. */
+const DEMO_TRIP_IDS = new Set(['tr1', 'tr2'])
+const DEMO_EVENT_IDS = new Set(['c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c8'])
+const DEMO_EQUIPMENT_IDS = new Set(['main', 'genset', 'maker', 'hvac', 'tender', 'fw-pump', 'bank', 'plotter'])
+const DEMO_SERVICE_IDS = new Set(['sv1', 'sv2', 'sv3', 'sv4'])
+const DEMO_DEFECT_IDS = new Set(['df1', 'df2'])
+const DEMO_SPARE_IDS = new Set(['sp1', 'sp2', 'sp3', 'sp4', 'sp5'])
+const DEMO_PURCHASE_IDS = new Set(['pr1', 'pr2', 'pr3', 'pr4'])
+const DEMO_PROVISION_IDS = new Set(['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8', 'p9', 'p10', 'p11'])
+const DEMO_CONTACT_IDS = new Set(['ct1', 'ct2', 'ct3', 'ct4', 'ct5', 'ct6', 'ct7'])
+const DEMO_DRILL_IDS = new Set(['dr1', 'dr2', 'dr3'])
+const DEMO_CERT_IDS = new Set(['c-ins', 'c-rina', 'c-ly2', 'c-life'])
+
+function dropDemo<T extends { id: string }>(list: T[] | undefined, ids: Set<string>) {
+  return (list ?? []).filter((row) => !ids.has(row.id))
+}
+
+export function sanitizeShared(board: SharedOps): SharedOps {
+  return {
+    ...board,
+    events: dropDemo(board.events, DEMO_EVENT_IDS),
+    ops: {
+      ...board.ops,
+      trips: dropDemo(board.ops.trips, DEMO_TRIP_IDS).filter(
+        (t) => !/marinella|bonifacio|adler/i.test(`${t.title} ${t.transfers ?? ''} ${t.notes ?? ''}`),
+      ),
+      equipment: dropDemo(board.ops.equipment, DEMO_EQUIPMENT_IDS),
+      services: dropDemo(board.ops.services, DEMO_SERVICE_IDS),
+      defects: dropDemo(board.ops.defects, DEMO_DEFECT_IDS),
+      spares: dropDemo(board.ops.spares, DEMO_SPARE_IDS),
+      purchases: dropDemo(board.ops.purchases, DEMO_PURCHASE_IDS),
+      provisions: dropDemo(board.ops.provisions, DEMO_PROVISION_IDS),
+      contacts: dropDemo(board.ops.contacts, DEMO_CONTACT_IDS),
+      drills: dropDemo(board.ops.drills, DEMO_DRILL_IDS),
+      certificates: dropDemo(board.ops.certificates, DEMO_CERT_IDS),
+    },
   }
 }
 
@@ -100,7 +139,7 @@ function mergeOpsState(current: OpsState, incoming: OpsState | undefined, delete
 }
 
 export function mergeShared(current: SharedOps, incoming: SharedOps, deleted?: DeletedIds): SharedOps {
-  return {
+  return sanitizeShared({
     tasks: mergeList(current.tasks, incoming.tasks, deleted?.tasks),
     messages: keepMessages(mergeList(current.messages, incoming.messages, deleted?.messages)),
     log: mergeList(current.log, incoming.log, deleted?.log),
@@ -113,5 +152,5 @@ export function mergeShared(current: SharedOps, incoming: SharedOps, deleted?: D
     ops: mergeOpsState(current.ops, incoming.ops, deleted),
     expenses: mergeList(current.expenses, incoming.expenses, deleted?.expenses),
     roster: mergeList(current.roster, incoming.roster, deleted?.roster),
-  }
+  })
 }

@@ -3366,6 +3366,51 @@ html[data-theme='dark'] .board-modern {
   line-height: 1.6;
 }
 
+.empty-state {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+  justify-items: start;
+  padding: 2.75rem 0.25rem 2.2rem;
+  max-width: 42ch;
+}
+
+.empty-state strong {
+  font-size: 1.15rem;
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1.25;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.empty-state-cta {
+  margin-top: 0.35rem;
+}
+
+.empty-state.is-compact {
+  padding: 1.1rem 0 0.4rem;
+  max-width: 36ch;
+}
+
+.empty-state.is-compact strong {
+  font-size: 1rem;
+}
+
+.empty-state.is-inline {
+  padding: 1.25rem 0 0.5rem;
+}
+
+html[data-theme='dark'] .empty-state strong {
+  color: var(--ink);
+}
+
 .ops-card.task {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

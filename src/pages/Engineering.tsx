@@ -36,8 +36,7 @@ export function Engineering() {
         <section className="panel">
           <p style={{ color: 'var(--muted)', lineHeight: 1.65, maxWidth: '48ch' }}>
             House bank {systems.batteryV.toFixed(1)} V. Hydraulics:{' '}
-            {systems.hydraulics === 'watch' ? 'boom-vang manifold weep, level marked 08:00, no drop yet' : 'clear'}.
-            Impeller spare not onboard — no passage under power until two are in the workshop.
+            {systems.hydraulics === 'watch' ? 'on watch' : 'clear'}.
           </p>
           <ul className="facts">
             <li>
@@ -50,7 +49,7 @@ export function Engineering() {
             </li>
             <li>
               <span>Draft</span>
-              {yacht.draftM} m — stay off the inner Marinella shelf
+              {yacht.draftM} m — watch depth in Port Vell approaches
             </li>
           </ul>
         </section>

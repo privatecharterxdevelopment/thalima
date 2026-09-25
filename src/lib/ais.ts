@@ -34,10 +34,12 @@ export type TrackPoint = {
 /** @deprecated AIS boat fix — kept so older imports compile */
 export type DeviceFix = BoatFix
 
-const KEY = 'thalima.fix.v3'
-const TRACK_KEY = 'thalima.ais.track.v1'
+const KEY = 'thalima.fix.v4'
+const TRACK_KEY = 'thalima.ais.track.v2'
 const AIS_URL = '/api/ais'
 const MAX_TRACK = 500
+/** Discard stale client caches still stuck on Sardinia / Olbia. */
+const OLBIA = { lat: 41.0315, lon: 9.52428 }
 
 const fallback: BoatFix = {
   lat: position.lat,
@@ -52,6 +54,17 @@ const fallback: BoatFix = {
   source: 'ais',
 }
 
+function isStaleSardinia(lat: number, lon: number) {
+  return haversineNm({ lat, lon }, OLBIA) < 40
+}
+
+function isPlausibleFix(lat: number, lon: number) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return false
+  if (isStaleSardinia(lat, lon)) return false
+  // Keep Med / nearby Atlantic — reject wild garbage
+  return lat > 30 && lat < 48 && lon > -10 && lon < 20
+}
+
 let last: BoatFix = readCache() ?? fallback
 let track: TrackPoint[] = readTrack()
 const listeners = new Set<(fix: BoatFix) => void>()
@@ -60,11 +73,15 @@ let started = false
 
 function readCache(): BoatFix | null {
   try {
+    // Drop legacy Olbia-era keys
+    sessionStorage.removeItem('thalima.fix.v3')
+    sessionStorage.removeItem('thalima.fix.v2')
     const raw = sessionStorage.getItem(KEY)
     if (!raw) return null
     const parsed = JSON.parse(raw) as BoatFix
     if (parsed.source !== 'ais') return null
     if (typeof parsed.lat !== 'number' || typeof parsed.lon !== 'number') return null
+    if (!isPlausibleFix(parsed.lat, parsed.lon)) return null
     return { ...fallback, ...parsed, source: 'ais' }
   } catch {
     return null
@@ -73,12 +90,17 @@ function readCache(): BoatFix | null {
 
 function readTrack(): TrackPoint[] {
   try {
+    localStorage.removeItem('thalima.ais.track.v1')
     const raw = localStorage.getItem(TRACK_KEY)
     if (!raw) return []
     const parsed = JSON.parse(raw) as TrackPoint[]
     if (!Array.isArray(parsed)) return []
     return parsed.filter(
-      (p) => typeof p?.lat === 'number' && typeof p?.lon === 'number' && typeof p?.at === 'string',
+      (p) =>
+        typeof p?.lat === 'number' &&
+        typeof p?.lon === 'number' &&
+        typeof p?.at === 'string' &&
+        isPlausibleFix(p.lat, p.lon),
     )
   } catch {
     return []

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { EmptyState } from '../components/EmptyState'
 import { WhoLine } from '../components/WhoLine'
 import { crew, deptLabel } from '../data/crew'
 import { buildAlerts } from '../lib/alerts'
@@ -152,9 +153,15 @@ export function Notifications() {
         </div>
 
         {items.length === 0 ? (
-          <p className="note-empty">Nothing on your seats right now.</p>
+          <EmptyState
+            title="All quiet on your seats"
+            body="Task updates, chat, and board alerts will land here when something needs you."
+          />
         ) : filtered.length === 0 ? (
-          <p className="note-empty">Nothing in this filter.</p>
+          <EmptyState
+            title="Nothing in this filter"
+            body="Try All, or switch to another category."
+          />
         ) : (
           <div className="note-groups">
             <NoteGroup label="Today" items={today} byId={byId} onSelect={dismiss} />

@@ -11,7 +11,7 @@ import { bearingDeg, describePassage, haversineNm, rhumbLine, type Place } from 
 import { formatLatLon } from '../lib/format'
 import { applyMapTheme, dressMap, mapStyle } from '../lib/mapStyle'
 
-const KEY = 'thalima.route.v2'
+const KEY = 'thalima.route.v3'
 
 type Saved = {
   from: Place
@@ -20,13 +20,22 @@ type Saved = {
   mode: '3d' | '2d'
 }
 
+function nearOlbia(p: Place | null | undefined) {
+  if (!p) return false
+  return Math.abs(p.lat - 41.0315) < 0.35 && Math.abs(p.lon - 9.52428) < 0.45
+}
+
 function loadSaved(): Saved {
   const ais: Place = { name: `Thalima · ${position.place}`, lat: position.lat, lon: position.lon }
   try {
+    sessionStorage.removeItem('thalima.route.v2')
     const raw = sessionStorage.getItem(KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as Saved
-      return { ...parsed, mode: '3d' }
+      if (nearOlbia(parsed.from) || nearOlbia(parsed.to)) {
+        return { from: ais, to: null, active: false, mode: '3d' }
+      }
+      return { ...parsed, from: ais, mode: '3d' }
     }
   } catch {
     /* ignore */
