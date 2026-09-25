@@ -202,6 +202,68 @@ export const api = {
     }
     throw new Error('Could not save. Try again.')
   },
+  async pushBoatFix(
+    fix: {
+      lat: number
+      lon: number
+      sogKn: number | null
+      cog: number | null
+      status: string
+      city: string
+      region: string
+      country: string
+      provider?: string
+      fetchedAt?: string
+    },
+    opts?: { track?: boolean },
+  ) {
+    const { data: session } = await supabase.auth.getSession()
+    if (!session.session) return { ok: false as const }
+    const fetchedAt = fix.fetchedAt ?? new Date().toISOString()
+    const row = {
+      id: 1,
+      lat: fix.lat,
+      lon: fix.lon,
+      sog_kn: fix.sogKn,
+      cog: fix.cog,
+      status: fix.status,
+      city: fix.city,
+      region: fix.region,
+      country: fix.country,
+      provider: fix.provider ?? 'ais',
+      fetched_at: fetchedAt,
+      updated_at: new Date().toISOString(),
+    }
+    const { error: upErr } = await supabase.from('boat_fix').upsert(row)
+    if (upErr) throw new Error(upErr.message)
+    if (opts?.track !== false) {
+      const { error: trErr } = await supabase.from('boat_track').insert({
+        lat: fix.lat,
+        lon: fix.lon,
+        sog_kn: fix.sogKn,
+        cog: fix.cog,
+        status: fix.status,
+        provider: fix.provider ?? 'ais',
+        fetched_at: fetchedAt,
+      })
+      if (trErr) throw new Error(trErr.message)
+    }
+    return { ok: true as const }
+  },
+  async getBoatFix() {
+    const { data, error } = await supabase.from('boat_fix').select('*').eq('id', 1).maybeSingle()
+    if (error) throw new Error(error.message)
+    return data
+  },
+  async getBoatTrack(limit = 200) {
+    const { data, error } = await supabase
+      .from('boat_track')
+      .select('lat, lon, sog_kn, cog, fetched_at')
+      .order('fetched_at', { ascending: true })
+      .limit(limit)
+    if (error) throw new Error(error.message)
+    return data ?? []
+  },
 }
 
 export function recordActivity(action: string, detail: string) {

@@ -6,7 +6,7 @@ import { position, yacht } from '../data/yacht'
 import { useStore } from '../store'
 import { useUi } from '../ui'
 import { canPlotRoute } from '../lib/permissions'
-import { useBoatFix } from '../lib/ais'
+import { useBoatFix, useBoatTrack } from '../lib/ais'
 import { bearingDeg, describePassage, haversineNm, rhumbLine, type Place } from '../lib/geo'
 import { formatLatLon } from '../lib/format'
 import { applyMapTheme, dressMap, mapStyle } from '../lib/mapStyle'
@@ -55,14 +55,23 @@ function emptyLine() {
 export function NavWidget({ variant = 'strip' }: { variant?: 'strip' | 'page' | 'window' }) {
   const { user, theme } = useStore()
   const fix = useBoatFix()
+  const track = useBoatTrack()
   const here: Place = useMemo(
     () => ({ name: `Thalima · ${fix.city}`, lat: fix.lat, lon: fix.lon }),
     [fix.city, fix.lat, fix.lon],
   )
+  const trackRef = useRef(track)
+  useEffect(() => {
+    trackRef.current = track
+  }, [track])
   const hereRef = useRef(here)
-  hereRef.current = here
+  useEffect(() => {
+    hereRef.current = here
+  }, [here])
   const themeRef = useRef(theme)
-  themeRef.current = theme
+  useEffect(() => {
+    themeRef.current = theme
+  }, [theme])
   const { navFull, setNavFull } = useUi()
   const nav = useNavigate()
   const mapDiv = useRef<HTMLDivElement>(null)
@@ -122,6 +131,16 @@ export function NavWidget({ variant = 'strip' }: { variant?: 'strip' | 'page' | 
     })
     mapRef.current = map
     const attach = () => {
+      if (!map.getSource('ais-track')) {
+        map.addSource('ais-track', { type: 'geojson', data: emptyLine() })
+        map.addLayer({
+          id: 'ais-track-line',
+          type: 'line',
+          source: 'ais-track',
+          paint: { 'line-color': '#38bdf8', 'line-width': 3, 'line-opacity': 0.75 },
+          layout: { 'line-cap': 'round', 'line-join': 'round' },
+        })
+      }
       if (!map.getSource('route')) {
         map.addSource('route', { type: 'geojson', data: emptyLine() })
         map.addLayer({
@@ -173,7 +192,7 @@ export function NavWidget({ variant = 'strip' }: { variant?: 'strip' | 'page' | 
   useEffect(() => {
     const map = mapRef.current
     if (map) draw(map)
-  }, [saved, legs, here])
+  }, [saved, legs, here, track])
 
   useEffect(() => {
     const map = mapRef.current
@@ -219,6 +238,18 @@ export function NavWidget({ variant = 'strip' }: { variant?: 'strip' | 'page' | 
           brg: bearingDeg(origin, dest),
         }
       : null
+    const trackSrc = map.getSource('ais-track') as mapboxgl.GeoJSONSource | undefined
+    if (trackSrc) {
+      const pts = trackRef.current
+      trackSrc.setData({
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: pts.length >= 2 ? pts.map((p) => [p.lon, p.lat] as [number, number]) : [],
+        },
+      })
+    }
     const src = map.getSource('route') as mapboxgl.GeoJSONSource | undefined
     if (src) {
       src.setData({

@@ -29,36 +29,35 @@ export const yacht = {
   tender: 'Williams Sportjet 435, 130 hp',
 }
 
-/** AIS 18 Sep 2026, Golfo di Marinella, Sardinia */
+/** AIS 25 Sep 2026, Barcelona (live MagicPort / MST) */
 export const position = {
-  lat: 41.0315,
-  lon: 9.52428,
-  sog: 0.1,
-  cog: 202,
-  status: 'At anchor',
-  place: 'Golfo di Marinella',
-  region: 'Costa Smeralda, Sardinia',
-  sea: 'Tyrrhenian Sea',
-  lastPort: 'Olbia',
-  lastPortAt: '2026-09-16T08:37:00Z',
+  lat: 41.36491,
+  lon: 2.1866,
+  sog: 0,
+  cog: 0,
+  status: 'Making port at BARCELONA',
+  place: 'Barcelona',
+  region: 'Catalonia',
+  country: 'Spain',
+  sea: 'Balearic Sea',
+  lastPort: 'Barcelona',
+  lastPortAt: '2026-09-25T11:05:00Z',
 }
 
 export const nearby = [
-  { name: 'Porto Rotondo', lat: 41.027, lon: 9.543, kind: 'marina' },
-  { name: 'Olbia', lat: 40.923, lon: 9.503, kind: 'port' },
-  { name: 'Golfo Aranci', lat: 40.995, lon: 9.615, kind: 'port' },
-  { name: 'Porto Cervo', lat: 41.137, lon: 9.535, kind: 'marina' },
+  { name: 'Port Vell', lat: 41.375, lon: 2.178, kind: 'marina' },
+  { name: 'Port Olímpic', lat: 41.387, lon: 2.2, kind: 'marina' },
+  { name: 'Badalona', lat: 41.443, lon: 2.248, kind: 'port' },
+  { name: 'Sitges', lat: 41.235, lon: 1.81, kind: 'marina' },
 ] as const
 
 export const docks = [
   { name: 'Thalima · here', lat: position.lat, lon: position.lon },
-  { name: 'Porto Rotondo', lat: 41.027, lon: 9.543 },
-  { name: 'Porto Cervo marina', lat: 41.137, lon: 9.535 },
-  { name: 'Marina di Portisco', lat: 41.036, lon: 9.526 },
-  { name: 'Golfo Aranci', lat: 40.995, lon: 9.615 },
-  { name: 'Olbia / Isola Bianca', lat: 40.923, lon: 9.503 },
-  { name: 'Cala di Volpe', lat: 41.079, lon: 9.54 },
-  { name: 'Bonifacio', lat: 41.387, lon: 9.159 },
-  { name: 'Porto Vecchio', lat: 41.592, lon: 9.28 },
-  { name: 'La Maddalena', lat: 41.214, lon: 9.408 },
+  { name: 'Port Vell / MareMagnum', lat: 41.375, lon: 2.178 },
+  { name: 'Port Olímpic', lat: 41.387, lon: 2.2 },
+  { name: 'Marina Port Fòrum', lat: 41.412, lon: 2.228 },
+  { name: 'Marina Badalona', lat: 41.443, lon: 2.248 },
+  { name: 'Sitges', lat: 41.235, lon: 1.81 },
+  { name: 'Palamós', lat: 41.845, lon: 3.129 },
+  { name: 'Palma de Mallorca', lat: 39.566, lon: 2.64 },
 ] as const
