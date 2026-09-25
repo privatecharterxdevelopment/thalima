@@ -31,3 +31,4 @@ data/*.db-*
 data/uploads/*
 !data/uploads/.gitkeep
 .vercel
+.env*

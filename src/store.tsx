@@ -13,7 +13,6 @@ import { api, recordActivity } from './lib/api'
 import { expenseMailFrom, notifyChat, notifyExpenseApproval, notifyTaskAssigned } from './lib/notify'
 import { seed } from './data/seed'
 import { opsSeed } from './data/ops'
-import { expensesSeed } from './data/accounting'
 import { rosterSeed } from './data/roster'
 import { chatRecipients, keepMessages } from './lib/chat'
 import { pickOps, type DeletedIds } from './lib/opsSync'
@@ -1026,7 +1025,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSnap((s) => {
       if (!s.userId) return s
       const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
-      const list = s.expenses ?? expensesSeed()
+      const list = s.expenses ?? []
       const draft = emptyDraftExpense(s.userId, nextExpenseRef(list), 'receipt')
       draft.id = id
       draft.receipt = file
@@ -1050,12 +1049,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       approverId: string
     }) => {
       let created = uid('ex')
-      const existing = snapRef.current.expenses ?? expensesSeed()
+      const existing = snapRef.current.expenses ?? []
       const ref = nextExpenseRef(existing)
       setSnap((s) => {
         if (!s.userId) return s
         const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
-        const list = s.expenses ?? expensesSeed()
+        const list = s.expenses ?? []
         const draft = emptyDraftExpense(s.userId, ref, 'manual')
         const next: Expense = {
           ...draft,
@@ -1137,7 +1136,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
         return {
           ...s,
-          expenses: (s.expenses ?? expensesSeed()).map((exp) => {
+          expenses: (s.expenses ?? []).map((exp) => {
             if (exp.id !== id) return exp
             const next = { ...exp, ...patch }
             if (next.currency === 'EUR' && next.amount != null) next.eurAmount = next.amount
@@ -1181,7 +1180,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const submitExpense = useCallback((id: string) => {
     const fromId = snapRef.current.userId
-    const exp = (snapRef.current.expenses ?? expensesSeed()).find((e) => e.id === id)
+    const exp = (snapRef.current.expenses ?? []).find((e) => e.id === id)
     if (!fromId || !exp || exp.status !== 'draft') return
     if (missingExpenseFields(exp).length) return
     const approverId = exp.approverId ?? defaultApproverId(fromId)
@@ -1190,7 +1189,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!s.userId) return s
       return {
         ...s,
-        expenses: (s.expenses ?? expensesSeed()).map((row) => {
+        expenses: (s.expenses ?? []).map((row) => {
           if (row.id !== id) return row
           return {
             ...row,
@@ -1212,7 +1211,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const now = new Date().toISOString()
       return {
         ...s,
-        expenses: (s.expenses ?? expensesSeed()).map((exp) => {
+        expenses: (s.expenses ?? []).map((exp) => {
           if (exp.id !== id) return exp
           if (exp.uploadedBy === s.userId) return exp
           return {
@@ -1234,7 +1233,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const who = crew.find((c) => c.id === s.userId)?.name.split(' ')[0] ?? 'Crew'
       return {
         ...s,
-        expenses: (s.expenses ?? expensesSeed()).map((exp) => {
+        expenses: (s.expenses ?? []).map((exp) => {
           if (exp.id !== id) return exp
           if (exp.uploadedBy === s.userId) return exp
           return {
@@ -1405,7 +1404,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       ops: snap.ops ?? opsSeed(),
       seenNotices: snap.seenNotices ?? {},
       dismissedEmergencies: snap.dismissedEmergencies ?? {},
-      expenses: snap.expenses ?? expensesSeed(),
+      expenses: snap.expenses ?? [],
       roster: snap.roster ?? rosterSeed(),
       authReady,
       signIn,

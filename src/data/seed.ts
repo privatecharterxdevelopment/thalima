@@ -1,6 +1,5 @@
 import { systemsSeed } from './crew'
 import { opsSeed } from './ops'
-import { expensesSeed } from './accounting'
 import { rosterSeed } from './roster'
 import type { AppSnapshot, CalEvent, ChatMessage, CloudDoc, LogEntry, Task } from '../types'
 
@@ -454,7 +453,7 @@ export function seed(): AppSnapshot {
     seenNotices: {},
     dismissedEmergencies: {},
     weather: null,
-    expenses: expensesSeed(),
+    expenses: [],
     roster: rosterSeed(),
   }
 }

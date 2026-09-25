@@ -160,11 +160,8 @@ export function extractionScore(exp: Expense) {
 
 export function receiptInbox(list: Expense[]) {
   return list
-    .filter((e) => e.status === 'draft' || (e.source === 'receipt' && !e.extraction.completed))
-    .sort((a, b) => {
-      if (a.extraction.completed !== b.extraction.completed) return a.extraction.completed ? -1 : 1
-      return new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
-    })
+    .filter((e) => e.status === 'draft')
+    .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime())
 }
 
 export function expensePlace(exp: Expense) {

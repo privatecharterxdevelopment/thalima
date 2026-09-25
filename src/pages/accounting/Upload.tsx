@@ -14,8 +14,7 @@ export function AccountingUpload() {
       <section className="acct-card acct-upload">
         <h2>Scan / Upload receipt</h2>
         <p>
-        Photograph the docket or attach an image or PDF. Review the fields before submitting — AI extraction is
-        prepared, not invented.
+        Photograph the docket or attach an image or PDF. Enter the figures from the original — nothing is invented.
         </p>
         <ReceiptCapture
           onFile={(file) => {
