@@ -48,12 +48,13 @@ export function Landing() {
             muted
             loop
             playsInline
+            preload="auto"
             disablePictureInPicture
-            poster={yachtPhotos.sailing[1].src}
+            poster={yachtPhotos.deck[1].src}
             aria-hidden="true"
             tabIndex={-1}
           >
-            <source src={yachtVideos.deckWalkthrough} type="video/mp4" />
+            <source src={`${yachtVideos.deckHero}?v=1`} type="video/mp4" />
           </video>
         </div>
       </section>

@@ -58,6 +58,7 @@ export const yachtPhotos = {
 
 export const yachtVideos = {
   deckWalkthrough: '/yacht/videos/deck-walkthrough.mp4',
+  deckHero: '/yacht/videos/deck-hero.mp4',
   interiorWalkthrough: '/yacht/videos/interior-walkthrough.mp4',
 } as const
 
