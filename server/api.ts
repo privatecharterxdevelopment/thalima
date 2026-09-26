@@ -87,6 +87,7 @@ function publicUser(row: UserRow) {
     photo: row.photo,
     access: row.access as 'owner' | 'crew',
     active: Boolean(row.active),
+    joinedAt: row.created_at,
   }
 }
 

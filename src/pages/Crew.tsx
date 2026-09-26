@@ -4,15 +4,11 @@ import { Avatar } from '../components/Avatar'
 import { SectionTabs } from '../components/SectionTabs'
 import { crew, deptLabel } from '../data/crew'
 import { certOverdue, certSoon } from '../lib/alerts'
+import { dmChannelId } from '../lib/chat'
 import { dayClock, stationsOf } from '../lib/format'
 import {
-  currentPresence,
   formatDayLong,
-  formatSpan,
-  presenceLabel,
   rosterKindLabel,
-  upcomingAbsence,
-  untilOffboard,
 } from '../lib/roster'
 import { useStore } from '../store'
 
@@ -24,6 +20,16 @@ const memberTabs = [
 ] as const
 
 type MemberTab = (typeof memberTabs)[number]['id']
+
+function formatJoined(iso?: string) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Europe/Rome',
+  })
+}
 
 export function CrewLayout() {
   const { roster } = useStore()
@@ -49,10 +55,6 @@ export function CrewMembers() {
   const [params, setParams] = useSearchParams()
   const tab = (memberTabs.some((t) => t.id === params.get('tab')) ? params.get('tab') : 'list') as MemberTab
   const people = crew.filter((c) => c.active !== false)
-  const selectedId = people.some((c) => c.id === params.get('who'))
-    ? (params.get('who') as string)
-    : (people[0]?.id ?? '')
-  const person = people.find((c) => c.id === selectedId) ?? people[0]
   const [toId, setToId] = useState('')
   const [body, setBody] = useState('')
 
@@ -67,14 +69,6 @@ export function CrewMembers() {
     .filter((e) => e.status === 'approved' && (e.duty === 'leave' || e.presence === 'offboard'))
     .sort((a, b) => a.from.localeCompare(b.from))
 
-  function selectWho(id: string) {
-    const next = new URLSearchParams(params)
-    if (tab !== 'list') next.set('tab', tab)
-    else next.delete('tab')
-    next.set('who', id)
-    setParams(next)
-  }
-
   return (
     <div className="crew-mod-body">
       <SectionTabs
@@ -83,87 +77,73 @@ export function CrewMembers() {
         onChange={(id) => {
           const next = new URLSearchParams()
           if (id !== 'list') next.set('tab', id)
-          if (selectedId) next.set('who', selectedId)
           setParams(next)
         }}
         tabs={[...memberTabs]}
       />
 
-      {tab === 'list' && person && (
-        <div className="crew-tabs-panel">
-          <SectionTabs
-            value={selectedId}
-            onChange={selectWho}
-            tabs={people.map((c) => ({ id: c.id, label: c.name }))}
-          />
-          <article className="crew-profile crew-profile-pane">
-            <div className="crew-profile-head">
-              <Avatar person={person} size="xl" />
-              <div>
-                <h2>{person.name}</h2>
-                <p className="crew-role">
-                  {person.title} · {stationsOf(person).map((d) => deptLabel[d]).join(' · ')}
-                </p>
-                <p className="crew-email">
-                  <a href={`mailto:${person.email}`}>{person.email}</a>
-                </p>
-              </div>
-            </div>
-            {(() => {
-              const presence = currentPresence(person.id, roster)
-              const upcoming = upcomingAbsence(person.id, roster)
-              const until = presence === 'offboard' ? untilOffboard(person.id, roster) : undefined
-              return (
-                <>
-                  <p className={`crew-now is-${presence}`}>
-                    <span>Current status</span>
-                    <strong>{presenceLabel[presence]}</strong>
-                    {until ? <em>Until {formatDayLong(until)}</em> : null}
-                  </p>
-                  {upcoming ? (
-                    <p className="crew-next">
-                      Upcoming absence
-                      <b>
-                        {formatSpan(upcoming.from, upcoming.to)} · {rosterKindLabel[upcoming.kind]}
-                      </b>
-                      <em>{upcoming.status === 'approved' ? 'Approved' : 'Pending'}</em>
-                    </p>
-                  ) : null}
-                </>
-              )
-            })()}
-            <Link className="btn ghost crew-sched-link" to="/crew/schedule">
-              View schedule
-            </Link>
-            <dl className="crew-facts">
-              <div>
-                <dt>Position</dt>
-                <dd>
-                  {person.title}
-                  <span>{person.watch}</span>
-                </dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>
-                  <a href={`mailto:${person.email}`}>{person.email}</a>
-                </dd>
-              </div>
-              {person.phone ? (
-                <div>
-                  <dt>Tel</dt>
-                  <dd>
-                    <a href={`tel:${person.phone.replace(/\s/g, '')}`}>{person.phone}</a>
-                  </dd>
-                </div>
-              ) : null}
-              <div>
-                <dt>Access</dt>
-                <dd>{person.access === 'owner' ? 'Owner / office' : 'Crew'}</dd>
-              </div>
-            </dl>
-          </article>
-        </div>
+      {tab === 'list' && (
+        <table className="table inv-table crew-list-table">
+          <thead>
+            <tr>
+              <th>Crew</th>
+              <th>Position</th>
+              <th>Joined</th>
+              <th>Contact</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {people.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="muted">
+                  No crew on board.
+                </td>
+              </tr>
+            ) : (
+              people.map((person) => {
+                const stations = stationsOf(person).map((d) => deptLabel[d]).join(' · ')
+                const chatTo =
+                  user && person.id !== user.id ? `/messages/${dmChannelId(user.id, person.id)}` : null
+                return (
+                  <tr key={person.id}>
+                    <td>
+                      <div className="crew-list-who">
+                        <Avatar person={person} size="md" />
+                        <div>
+                          <strong>{person.name}</strong>
+                          {stations ? <div className="muted">{stations}</div> : null}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      {person.title}
+                      {person.watch ? <div className="muted">{person.watch}</div> : null}
+                    </td>
+                    <td>{formatJoined(person.joinedAt)}</td>
+                    <td>
+                      <div className="crew-list-contact">
+                        <a href={`mailto:${person.email}`}>{person.email}</a>
+                        {person.phone ? (
+                          <a href={`tel:${person.phone.replace(/\s/g, '')}`}>{person.phone}</a>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td className="crew-list-chat">
+                      {chatTo ? (
+                        <Link className="btn ghost" to={chatTo}>
+                          Chat
+                        </Link>
+                      ) : (
+                        <span className="muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
       )}
 
       {tab === 'certificates' && (
