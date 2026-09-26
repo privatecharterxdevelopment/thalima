@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { crew, deptLabel, statusLabel } from '../data/crew'
 import { canSeeTask, sortTasks, stationsOf, taskAssignees } from '../lib/format'
@@ -73,14 +73,7 @@ export function Board() {
             Defects
           </button>
         </div>
-        {canCreate && (
-          <Link className="btn" to="/new">
-            New task
-          </Link>
-        )}
-      </div>
-
-      <div className="ops-toolbar">
+        <div className="ops-toolbar">
         <label className="ops-search">
           <Search size={15} strokeWidth={1.75} />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search" />
@@ -113,6 +106,7 @@ export function Board() {
             </select>
           </>
         )}
+        </div>
       </div>
 
       <section className="ops-list">

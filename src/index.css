@@ -4197,6 +4197,7 @@ html[data-theme='dark'] .cal-day.on { color: #09090b; }
   .kanban { grid-template-columns: repeat(3, minmax(220px, 1fr)); }
   .ops-list { overflow: visible; min-height: auto; }
   .board-modern { height: auto; overflow: auto; }
+  .board-modern > .ops-top { flex-wrap: wrap; }
   .home { padding: 14px 18px 28px; gap: 18px; overflow: auto; height: auto; }
   .home-stage {
     grid-template-columns: 1fr;
@@ -7341,7 +7342,18 @@ html[data-theme='dark'] .admin-page .ops-views button.on {
 
 .crew-mod-body > .filters { margin-top: -0.2rem; }
 
-.board-modern > .ops-top { margin-bottom: 0; }
+.board-modern > .ops-top {
+  justify-content: flex-start;
+  flex-wrap: nowrap;
+  gap: 1.2rem 1.6rem;
+  margin-bottom: 0;
+}
+
+.board-modern > .ops-top .ops-toolbar {
+  flex: 1;
+  min-width: 0;
+  margin-left: 0.4rem;
+}
 
 .cal > .cal-tabs {
   margin: 0;
