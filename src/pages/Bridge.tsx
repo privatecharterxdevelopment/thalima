@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { Check, Plus } from 'lucide-react'
 import { NavWidget } from '../components/NavWidget'
 import { WhoLine } from '../components/WhoLine'
 import { StatusPill, statusTone } from '../components/StatusPill'
@@ -108,7 +109,24 @@ export function Bridge() {
             </button>
           </header>
           {team.length === 0 ? (
-            <p className="home-empty">Nothing open for the rest of the crew.</p>
+            <div className="home-caught">
+              <div className="home-caught-copy">
+                <h3>Crew is all caught up</h3>
+                <p>There are currently no crew tasks.</p>
+                <div className="home-caught-pills">
+                  <span>
+                    <i className="is-open" />0 Open
+                  </span>
+                  <span>
+                    <i className="is-today" />0 Due today
+                  </span>
+                  <span>
+                    <i className="is-late" />0 Overdue
+                  </span>
+                </div>
+              </div>
+              <img className="home-caught-boat" src="/yacht/empty-yacht.png" alt="" />
+            </div>
           ) : (
             <div className="home-table">
               <div className="home-thead">
@@ -142,9 +160,22 @@ export function Bridge() {
             <em>{mine.length}</em>
           </header>
           {mine.length === 0 ? (
-            <div className="home-clear">
-              <strong>No pending tasks for you.</strong>
-              <span>Nothing is assigned to {user.name.split(' ')[0]} right now.</span>
+            <div className="home-clear home-allclear">
+              <span className="home-allclear-mark" aria-hidden="true">
+                <Check size={22} strokeWidth={2.2} />
+              </span>
+              <strong>All clear</strong>
+              <p>
+                You have no pending tasks.
+                <br />
+                Enjoy the quiet while it lasts.
+              </p>
+              {user.level <= 2 ? (
+                <Link className="home-allclear-btn" to="/new">
+                  <Plus size={14} strokeWidth={2.2} />
+                  Create task
+                </Link>
+              ) : null}
             </div>
           ) : (
             <ul className="home-mine-list">
