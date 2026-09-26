@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
+import { EmptyState } from '../components/EmptyState'
 import { crew, deptLabel, statusLabel } from '../data/crew'
 import { canSeeTask, sortTasks, stationsOf, taskAssignees } from '../lib/format'
 import { isOpenStatus } from '../lib/opsTasks'
@@ -150,8 +151,23 @@ export function Board() {
             })
           : filtered.map((t) => <TaskCard key={t.id} task={t} />)}
 
-        {view === 'defects' && defectList.length === 0 && <p className="ops-empty">No open defects.</p>}
-        {view === 'tasks' && filtered.length === 0 && <p className="ops-empty">Nothing here.</p>}
+        {view === 'defects' && defectList.length === 0 && (
+          <EmptyState
+            title="No open defects"
+            body="Plant and deck faults will show here when someone logs them."
+          />
+        )}
+        {view === 'tasks' && filtered.length === 0 && (
+          <EmptyState
+            title={q.trim() || dept !== 'all' || status !== 'active' || assignee !== 'all' ? 'No matching tasks' : 'Board is clear'}
+            body={
+              q.trim() || dept !== 'all' || status !== 'active' || assignee !== 'all'
+                ? 'Try another filter, or clear search to see the full board.'
+                : 'Nothing open for these seats. Create a task when work comes up.'
+            }
+            action={{ to: '/new', label: 'Create task' }}
+          />
+        )}
       </section>
     </div>
   )

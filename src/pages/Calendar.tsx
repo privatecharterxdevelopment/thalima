@@ -7,6 +7,7 @@ import { romeDay } from '../lib/opsTasks'
 import { formatSpan, rosterKindLabel, visibleRoster } from '../lib/roster'
 import { canAdminCalendar, canEditCalendar } from '../lib/permissions'
 import { useStore } from '../store'
+import { EmptyState } from '../components/EmptyState'
 import { SectionTabs } from '../components/SectionTabs'
 import type { CalRole, Trip, TripGuest } from '../types'
 
@@ -73,6 +74,17 @@ export function Calendar() {
       {view === 'trips' ? (
         <div className="trip-list">
           <div className="cal-trips-head">{viewSwitch}</div>
+          {ops.trips.length === 0 && !tripCompose ? (
+            <EmptyState
+              title="No events yet"
+              body="Charters and owner weekends land here — guest lists, transfers, and prep in one place."
+              action={
+                user.level <= 2
+                  ? { onClick: () => setTripCompose(true), label: 'Add event' }
+                  : undefined
+              }
+            />
+          ) : null}
           {ops.trips.map((trip) => (
             <Link key={trip.id} to={`/calendar/event/${trip.id}`} className="glass-card trip-card">
               <p className="inv-kicker">{trip.ownerAboard ? 'Owner aboard' : 'Charter / guests'}</p>
@@ -156,7 +168,14 @@ export function Calendar() {
             const key = romeDay(picked.toISOString())
             const awayToday = absences.filter((e) => e.from <= key && e.to >= key)
             if (onDay.length === 0 && awayToday.length === 0) {
-              return <p className="hint">Quiet.</p>
+              return (
+                <EmptyState
+                  className="is-compact"
+                  title="Nothing scheduled"
+                  body="No diary entries or approved leave for this day."
+                  action={canWrite ? { onClick: () => setCompose(true), label: 'Add entry' } : undefined}
+                />
+              )
             }
             return (
               <>
@@ -285,7 +304,7 @@ function NewTrip({
         >
           <label>
             Title
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Owner weekend · Bonifacio" required />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Owner weekend · Barcelona" required />
           </label>
           <label>
             From
@@ -308,12 +327,12 @@ function NewTrip({
               rows={3}
               value={guests}
               onChange={(e) => setGuests(e.target.value)}
-              placeholder={'One per line: Name · Cabin · Diet · Allergy\nMrs Adler · Owner suite · Soft wake 08:00'}
+              placeholder={'One per line: Name · Cabin · Diet · Allergy\nAlex Rivera · Owner suite · Soft wake 08:00'}
             />
           </label>
           <label>
             Transfers
-            <input value={transfers} onChange={(e) => setTransfers(e.target.value)} placeholder="Tender 18:30 Porto Rotondo" />
+            <input value={transfers} onChange={(e) => setTransfers(e.target.value)} placeholder="Tender 18:30 Port Vell" />
           </label>
           <label>
             Reservations

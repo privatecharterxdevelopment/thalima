@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { EmptyState } from '../components/EmptyState'
 import { crew } from '../data/crew'
 import { dayClock, relative, uid } from '../lib/format'
 import { useStore } from '../store'
@@ -163,7 +164,14 @@ export function EventPage() {
                 </button>
               ) : null}
             </div>
-            {trip.guests.length === 0 ? <p className="hint">No guests yet.</p> : null}
+            {trip.guests.length === 0 ? (
+              <EmptyState
+                className="is-inline"
+                title="No guests yet"
+                body="Add names, cabins, diet and allergies when the guest list is ready."
+                action={can ? { onClick: addGuest, label: 'Add guest' } : undefined}
+              />
+            ) : null}
             {trip.guests.length > 0 ? (
               <table className="table inv-table event-guest-table">
                 <thead>
@@ -282,7 +290,9 @@ export function EventPage() {
         <div className="task-page-side">
           <section className="task-log">
             <p className="eyebrow">Log</p>
-            {log.length === 0 ? <p className="task-log-empty">No changes yet.</p> : null}
+            {log.length === 0 ? (
+              <EmptyState className="is-inline" title="No changes yet" body="Guest and prep edits will log here." />
+            ) : null}
             {log.map((entry) => {
               const who = crew.find((c) => c.id === entry.authorId)
               const sys = entry.kind && entry.kind !== 'note'

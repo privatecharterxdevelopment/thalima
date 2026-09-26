@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { EmptyState } from '../components/EmptyState'
 import { SectionTabs } from '../components/SectionTabs'
 import { hoursToService, liveHours } from '../lib/alerts'
 import { dayClock } from '../lib/format'
@@ -44,6 +45,12 @@ export function Maintenance() {
       </div>
 
       {tab === 'equipment' && (
+        ops.equipment.length === 0 ? (
+          <EmptyState
+            title="No equipment logged"
+            body="Assets and service intervals will appear here once engineering adds them."
+          />
+        ) : (
         <table className="table inv-table">
           <thead>
             <tr>
@@ -78,9 +85,16 @@ export function Maintenance() {
             })}
           </tbody>
         </table>
+        )
       )}
 
       {tab === 'schedule' && (
+        schedule.length === 0 ? (
+          <EmptyState
+            title="Service schedule is empty"
+            body="Hour-based service intervals show up here after equipment is on the board."
+          />
+        ) : (
         <table className="table inv-table">
           <thead>
             <tr>
@@ -103,6 +117,7 @@ export function Maintenance() {
             ))}
           </tbody>
         </table>
+        )
       )}
 
       {tab === 'hours' && (
@@ -134,8 +149,14 @@ export function Maintenance() {
           <section className="panel">
             <p className="inv-copy" style={{ marginTop: 0 }}>
               House bank {systems.batteryV.toFixed(1)} V. Hydraulics {systems.hydraulics === 'watch' ? 'on watch' : 'clear'}.
-              Generator service {dueLabel(hoursToService(ops.equipment.find((e) => e.id === 'genset') ?? ops.equipment[0], systems))}.
             </p>
+            {ops.services.length === 0 ? (
+              <EmptyState
+                className="is-inline"
+                title="No service logs yet"
+                body="Recent plant work will list here after the first entry."
+              />
+            ) : (
             <ul className="facts">
               {ops.services.slice(0, 4).map((sv) => {
                 const eq = ops.equipment.find((e) => e.id === sv.assetId)
@@ -148,11 +169,15 @@ export function Maintenance() {
                 )
               })}
             </ul>
+            )}
           </section>
         </div>
       )}
 
       {tab === 'defects' && (
+        ops.defects.length === 0 ? (
+          <EmptyState title="No defects logged" body="Open plant and deck faults will show here." />
+        ) : (
         <table className="table inv-table">
           <thead>
             <tr>
@@ -178,9 +203,13 @@ export function Maintenance() {
             ))}
           </tbody>
         </table>
+        )
       )}
 
       {tab === 'spares' && (
+        ops.spares.length === 0 ? (
+          <EmptyState title="No spare parts listed" body="Stock levels for critical parts will show here." />
+        ) : (
         <table className="table inv-table">
           <thead>
             <tr>
@@ -207,6 +236,7 @@ export function Maintenance() {
             ))}
           </tbody>
         </table>
+        )
       )}
     </div>
   )

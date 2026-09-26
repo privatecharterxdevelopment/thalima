@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { EmptyState } from '../components/EmptyState'
 import { NavWidget } from '../components/NavWidget'
 import { WhoLine } from '../components/WhoLine'
 import { StatusPill, statusTone } from '../components/StatusPill'
@@ -108,7 +109,12 @@ export function Bridge() {
             </button>
           </header>
           {team.length === 0 ? (
-            <p className="home-empty">Nothing open for the rest of the crew.</p>
+            <EmptyState
+              className="is-compact"
+              title="Crew board is clear"
+              body="No open tasks for the rest of the team right now."
+              action={{ to: '/new', label: 'Create task' }}
+            />
           ) : (
             <div className="home-table">
               <div className="home-thead">
@@ -142,10 +148,12 @@ export function Bridge() {
             <em>{mine.length}</em>
           </header>
           {mine.length === 0 ? (
-            <div className="home-clear">
-              <strong>No pending tasks for you.</strong>
-              <span>Nothing is assigned to {user.name.split(' ')[0]} right now.</span>
-            </div>
+            <EmptyState
+              className="is-compact"
+              title="You're clear"
+              body={`Nothing assigned to ${user.name.split(' ')[0]} right now.`}
+              action={{ to: '/board', label: 'Open board' }}
+            />
           ) : (
             <ul className="home-mine-list">
               {mine.map((t) => (
@@ -192,7 +200,12 @@ export function Bridge() {
           </div>
           <p className="home-day">{pickedLabel}</p>
           {dayEvents.length === 0 && !tripOnDay ? (
-            <p className="home-empty">Nothing in the diary.</p>
+            <EmptyState
+              className="is-compact"
+              title="Diary is open"
+              body={`No entries for ${pickedLabel}.`}
+              action={{ to: '/calendar', label: 'Open calendar' }}
+            />
           ) : (
             <ul className="home-events">
               {tripOnDay ? (
