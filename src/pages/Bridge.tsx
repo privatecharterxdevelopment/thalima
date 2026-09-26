@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Check, Plus } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Check } from 'lucide-react'
 import { NavWidget } from '../components/NavWidget'
 import { WhoLine } from '../components/WhoLine'
 import { StatusPill, statusTone } from '../components/StatusPill'
@@ -170,12 +170,6 @@ export function Bridge() {
                 <br />
                 Enjoy the quiet while it lasts.
               </p>
-              {user.level <= 2 ? (
-                <Link className="home-allclear-btn" to="/new">
-                  <Plus size={14} strokeWidth={2.2} />
-                  Create task
-                </Link>
-              ) : null}
             </div>
           ) : (
             <ul className="home-mine-list">

@@ -6786,13 +6786,17 @@ html[data-theme='dark'] .home-card { background: var(--paper); }
 
 .home-caught-boat {
   position: absolute;
-  right: -6%;
-  bottom: -18%;
-  width: min(92%, 40rem);
-  height: auto;
+  right: 0;
+  top: 0.4rem;
+  bottom: 0;
+  height: calc(100% - 0.4rem);
+  width: auto;
+  max-width: 72%;
+  object-fit: contain;
+  object-position: right bottom;
   pointer-events: none;
   user-select: none;
-  mask-image: linear-gradient(90deg, transparent, #000 18%);
+  mask-image: linear-gradient(90deg, transparent, #000 8%);
 }
 
 .home-caught-copy {
@@ -6899,22 +6903,6 @@ html[data-theme='dark'] .home-allclear-mark {
 .home-allclear strong {
   font-size: 1.35rem;
 }
-
-.home-allclear-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin-top: 0.85rem;
-  padding: 0.55rem 0.95rem;
-  border-radius: 10px;
-  background: #1c2430;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-
-.home-allclear-btn:hover { background: #11161d; }
 
 .home-mine-list {
   list-style: none;
