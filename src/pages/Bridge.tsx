@@ -125,7 +125,9 @@ export function Bridge() {
                   </span>
                 </div>
               </div>
-              <img className="home-caught-boat" src="/yacht/empty-yacht.png" alt="" />
+              <div className="home-caught-boat" aria-hidden="true">
+                <img src="/yacht/empty-yacht.png" alt="" />
+              </div>
             </div>
           ) : (
             <div className="home-table">

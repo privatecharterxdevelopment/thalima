@@ -6786,17 +6786,20 @@ html[data-theme='dark'] .home-card { background: var(--paper); }
 
 .home-caught-boat {
   position: absolute;
+  top: 0.15rem;
   right: 0;
-  top: 0.4rem;
-  bottom: 0;
-  height: calc(100% - 0.4rem);
-  width: auto;
-  max-width: 72%;
-  object-fit: contain;
-  object-position: right bottom;
+  bottom: 0.2rem;
+  width: min(54%, 26rem);
   pointer-events: none;
   user-select: none;
-  mask-image: linear-gradient(90deg, transparent, #000 8%);
+}
+
+.home-caught-boat img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: right center;
 }
 
 .home-caught-copy {
