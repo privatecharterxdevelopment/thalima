@@ -7033,10 +7033,11 @@ html[data-theme='dark'] .home-card { background: var(--paper); }
 
 .home-caught-boat {
   position: absolute;
-  top: 0.15rem;
-  right: 0;
-  bottom: 0.2rem;
-  width: min(38%, 18rem);
+  left: 50%;
+  top: 50%;
+  width: min(88%, 28rem);
+  height: min(100%, 22rem);
+  transform: translate(-50%, -50%);
   pointer-events: none;
   user-select: none;
 }
@@ -7046,7 +7047,7 @@ html[data-theme='dark'] .home-card { background: var(--paper); }
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: right center;
+  object-position: center center;
 }
 
 .home-caught-copy {
