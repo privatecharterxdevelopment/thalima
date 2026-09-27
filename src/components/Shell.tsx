@@ -22,8 +22,6 @@ import { Avatar } from './Avatar'
 import { CreateMenu } from './CreateMenu'
 import { EmergencyAlert } from './EmergencyAlert'
 import { helloParts, isFreshTask, isMarkedOn } from '../lib/format'
-import { useBoatFix } from '../lib/ais'
-import { yacht } from '../data/yacht'
 import { buildNotices, isNoticeSeen } from '../lib/notices'
 import { menuFor, titleFor } from '../nav'
 import { visibleChannels } from '../lib/permissions'
@@ -70,7 +68,6 @@ export function Shell() {
   const { user, tasks, lastRead, messages, seenNotices, roster, expenses } = useStore()
   const { navFull, setNavFull } = useUi()
   const loc = useLocation()
-  const fix = useBoatFix()
   const [now, setNow] = useState(() => new Date())
   const [railOpen, setRailOpen] = useState(() => loadFlag(RAIL_KEY))
   const [accountOpen, setAccountOpen] = useState(() => loadFlag(ACCOUNT_KEY))
@@ -203,11 +200,6 @@ export function Shell() {
                   heading
                 )}
               </h1>
-              {loc.pathname === '/app' && fix.city ? (
-                <p className="top-vessel">
-                  {yacht.name.toUpperCase()} · {fix.city}
-                </p>
-              ) : null}
             </div>
             <div className="ahoy">
               {user.level <= 2 ? (
