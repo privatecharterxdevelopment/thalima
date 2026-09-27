@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host --port 5173",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/bundle-notify.mjs && tsc -b && vite build",
     "start": "node --experimental-strip-types server/listen.ts",
     "lint": "oxlint",
     "preview": "vite preview --host"
