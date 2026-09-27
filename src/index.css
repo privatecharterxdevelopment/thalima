@@ -3478,7 +3478,7 @@ html[data-theme='dark'] .board-modern {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.75rem;
-  margin-bottom: 1.35rem;
+  margin-bottom: 0;
 }
 
 .tasks-empty-stats span {
@@ -3516,11 +3516,6 @@ html[data-theme='dark'] .tasks-empty-stats span {
   background: var(--paper);
   border-color: var(--line);
   color: var(--muted);
-}
-
-.tasks-empty .create-drop {
-  top: auto;
-  bottom: calc(100% + 6px);
 }
 
 .ops-card.task {

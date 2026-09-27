@@ -5,7 +5,6 @@ import { crew, deptLabel, statusLabel } from '../data/crew'
 import { canSeeTask, sortTasks, stationsOf, taskAssignees } from '../lib/format'
 import { isOpenStatus } from '../lib/opsTasks'
 import { useStore } from '../store'
-import { CreateMenu } from '../components/CreateMenu'
 import { TaskCard } from '../components/TaskCard'
 import type { Department, TaskStatus } from '../types'
 
@@ -129,7 +128,6 @@ export function Board() {
               <b>0</b> Overdue
             </span>
           </div>
-          {canCreate ? <CreateMenu /> : null}
         </div>
       ) : (
       <section className="ops-list">
