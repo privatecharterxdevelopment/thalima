@@ -2320,6 +2320,40 @@ html[data-theme='dark'] .bubble.mine .txt { color: #09090b; }
   gap: 24px;
 }
 
+.crew-mod-body > .inv-head .page-tabs,
+.crew-mod-body > .inv-head .ops-views,
+.crew-people .page-tabs,
+.crew-people .ops-views {
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.crew-people {
+  width: 100%;
+}
+
+.crew-mod-body > .table,
+.crew-table {
+  width: 100%;
+}
+
+.crew-table tbody tr.is-on td {
+  background: rgba(12, 16, 22, 0.04);
+}
+
+html[data-theme='dark'] .crew-table tbody tr.is-on td {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.crew-mod-body .table a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.crew-mod-body .table a:hover {
+  text-decoration: underline;
+}
+
 .crew-tabs-panel {
   display: grid;
   gap: 1.25rem;

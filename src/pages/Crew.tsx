@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useSearchParams } from 'react-router-dom'
-import { Avatar } from '../components/Avatar'
+import { NavLink, Outlet, useSearchParams } from 'react-router-dom'
 import { SectionTabs } from '../components/SectionTabs'
 import { crew, deptLabel } from '../data/crew'
 import { certOverdue, certSoon } from '../lib/alerts'
@@ -8,10 +7,8 @@ import { dayClock, stationsOf } from '../lib/format'
 import {
   currentPresence,
   formatDayLong,
-  formatSpan,
   presenceLabel,
   rosterKindLabel,
-  upcomingAbsence,
   untilOffboard,
 } from '../lib/roster'
 import { useStore } from '../store'
@@ -49,10 +46,7 @@ export function CrewMembers() {
   const [params, setParams] = useSearchParams()
   const tab = (memberTabs.some((t) => t.id === params.get('tab')) ? params.get('tab') : 'list') as MemberTab
   const people = crew.filter((c) => c.active !== false)
-  const selectedId = people.some((c) => c.id === params.get('who'))
-    ? (params.get('who') as string)
-    : (people[0]?.id ?? '')
-  const person = people.find((c) => c.id === selectedId) ?? people[0]
+  const selectedId = people.some((c) => c.id === params.get('who')) ? (params.get('who') as string) : ''
   const [toId, setToId] = useState('')
   const [body, setBody] = useState('')
 
@@ -77,93 +71,78 @@ export function CrewMembers() {
 
   return (
     <div className="crew-mod-body">
-      <SectionTabs
-        variant="pills"
-        value={tab}
-        onChange={(id) => {
-          const next = new URLSearchParams()
-          if (id !== 'list') next.set('tab', id)
-          if (selectedId) next.set('who', selectedId)
-          setParams(next)
-        }}
-        tabs={[...memberTabs]}
-      />
+      <div className="inv-head">
+        <SectionTabs
+          value={tab}
+          onChange={(id) => {
+            const next = new URLSearchParams()
+            if (id !== 'list') next.set('tab', id)
+            if (selectedId) next.set('who', selectedId)
+            setParams(next)
+          }}
+          tabs={[...memberTabs]}
+        />
+      </div>
 
-      {tab === 'list' && person && (
-        <div className="crew-tabs-panel">
-          <SectionTabs
-            value={selectedId}
-            onChange={selectWho}
-            tabs={people.map((c) => ({ id: c.id, label: c.name }))}
-          />
-          <article className="crew-profile crew-profile-pane">
-            <div className="crew-profile-head">
-              <Avatar person={person} size="xl" />
-              <div>
-                <h2>{person.name}</h2>
-                <p className="crew-role">
-                  {person.title} · {stationsOf(person).map((d) => deptLabel[d]).join(' · ')}
-                </p>
-                <p className="crew-email">
-                  <a href={`mailto:${person.email}`}>{person.email}</a>
-                </p>
-              </div>
-            </div>
-            {(() => {
-              const presence = currentPresence(person.id, roster)
-              const upcoming = upcomingAbsence(person.id, roster)
-              const until = presence === 'offboard' ? untilOffboard(person.id, roster) : undefined
-              return (
-                <>
-                  <p className={`crew-now is-${presence}`}>
-                    <span>Current status</span>
-                    <strong>{presenceLabel[presence]}</strong>
-                    {until ? <em>Until {formatDayLong(until)}</em> : null}
-                  </p>
-                  {upcoming ? (
-                    <p className="crew-next">
-                      Upcoming absence
-                      <b>
-                        {formatSpan(upcoming.from, upcoming.to)} · {rosterKindLabel[upcoming.kind]}
-                      </b>
-                      <em>{upcoming.status === 'approved' ? 'Approved' : 'Pending'}</em>
-                    </p>
-                  ) : null}
-                </>
-              )
-            })()}
-            <Link className="btn ghost crew-sched-link" to="/crew/schedule">
-              View schedule
-            </Link>
-            <dl className="crew-facts">
-              <div>
-                <dt>Position</dt>
-                <dd>
-                  {person.title}
-                  <span>{person.watch}</span>
-                </dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>
-                  <a href={`mailto:${person.email}`}>{person.email}</a>
-                </dd>
-              </div>
-              {person.phone ? (
-                <div>
-                  <dt>Tel</dt>
-                  <dd>
-                    <a href={`tel:${person.phone.replace(/\s/g, '')}`}>{person.phone}</a>
-                  </dd>
-                </div>
-              ) : null}
-              <div>
-                <dt>Access</dt>
-                <dd>{person.access === 'owner' ? 'Owner / office' : 'Crew'}</dd>
-              </div>
-            </dl>
-          </article>
-        </div>
+      {tab === 'list' && (
+        <>
+          <div className="crew-people">
+            <SectionTabs
+              value={selectedId}
+              onChange={selectWho}
+              tabs={people.map((c) => ({ id: c.id, label: c.name }))}
+            />
+          </div>
+          <table className="table inv-table crew-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Title</th>
+              <th>Station</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Access</th>
+            </tr>
+          </thead>
+          <tbody>
+            {people.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="muted">
+                  No crew on board.
+                </td>
+              </tr>
+            ) : (
+              people.map((member) => {
+                const presence = currentPresence(member.id, roster)
+                const until = presence === 'offboard' ? untilOffboard(member.id, roster) : undefined
+                return (
+                  <tr key={member.id} className={member.id === selectedId ? 'is-on' : ''}>
+                    <td>{member.name}</td>
+                    <td>
+                      {member.title}
+                      {member.watch ? <div className="muted">{member.watch}</div> : null}
+                    </td>
+                    <td>{stationsOf(member).map((d) => deptLabel[d]).join(' · ')}</td>
+                    <td>
+                      <a href={`mailto:${member.email}`}>{member.email}</a>
+                      {member.phone ? (
+                        <div>
+                          <a href={`tel:${member.phone.replace(/\s/g, '')}`}>{member.phone}</a>
+                        </div>
+                      ) : null}
+                    </td>
+                    <td>
+                      {presenceLabel[presence]}
+                      {until ? ` · until ${formatDayLong(until)}` : ''}
+                    </td>
+                    <td>{member.access === 'owner' ? 'Owner / office' : 'Crew'}</td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
+        </>
       )}
 
       {tab === 'certificates' && (
