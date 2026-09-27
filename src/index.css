@@ -6930,7 +6930,7 @@ html[data-theme='dark'] .home-card { background: var(--paper); }
   top: 0.15rem;
   right: 0;
   bottom: 0.2rem;
-  width: min(26%, 13rem);
+  width: min(38%, 18rem);
   pointer-events: none;
   user-select: none;
 }
