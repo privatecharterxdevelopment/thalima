@@ -106,6 +106,7 @@ export function Admin() {
   const [logs, setLogs] = useState<ActivityRow[]>([])
   const [form, setForm] = useState(emptyForm)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [busy, setBusy] = useState(false)
   const [pw, setPw] = useState<Record<string, string>>({})
 
@@ -134,9 +135,11 @@ export function Admin() {
     e.preventDefault()
     setBusy(true)
     setError('')
+    setNotice('')
     try {
       const stations = form.departments.length ? form.departments : (['deck'] as Department[])
-      await api.createUser({
+      const email = form.email.trim()
+      const result = await api.createUser({
         ...form,
         department: stations[0],
         departments: stations,
@@ -144,6 +147,11 @@ export function Admin() {
       })
       setForm(emptyForm())
       await loadUsers()
+      setNotice(
+        result.mailed
+          ? `Added. A sign-in email is on its way to ${email}.`
+          : `Added ${email}. The sign-in email could not be sent${result.mailError ? `: ${result.mailError}` : '.'}`,
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not create user.')
     } finally {
@@ -174,6 +182,7 @@ export function Admin() {
       </nav>
 
       {error ? <p className="acct-warn">{error}</p> : null}
+      {notice ? <p className="admin-note">{notice}</p> : null}
 
       {tab === 'users' ? (
         <>

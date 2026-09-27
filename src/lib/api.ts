@@ -116,18 +116,30 @@ export const api = {
     return { users: (data as ProfileRow[]).map(asUser) }
   },
   async createUser(input: Record<string, unknown>) {
-    const { data: session } = await supabase.auth.getSession()
-    const token = session.session?.access_token
-    if (!token) throw new Error('Sign in required.')
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(input),
+    const email = String(input.email ?? '').trim().toLowerCase()
+    const departments = Array.isArray(input.departments)
+      ? input.departments
+      : input.department
+        ? [input.department]
+        : ['deck']
+    const { error } = await supabase.rpc('create_crew_user', {
+      p_name: String(input.name ?? ''),
+      p_email: email,
+      p_password: String(input.password ?? ''),
+      p_title: String(input.title ?? ''),
+      p_role: String(input.role ?? 'deckhand'),
+      p_departments: departments,
+      p_level: Number(input.level ?? 3),
+      p_accounting: String(input.accounting ?? 'none'),
+      p_phone: String(input.phone ?? ''),
+      p_watch: String(input.watch ?? ''),
+      p_access: String(input.access ?? 'crew'),
     })
-    const data = (await res.json().catch(() => ({}))) as { user?: LiveUser; error?: string }
-    if (!res.ok) throw new Error(data.error || 'Request failed.')
-    return { user: data.user as LiveUser }
+    if (error) throw new Error(error.message.replace(/^.*?:\s*/, '') || 'Could not create user.')
+    const mailed = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/login`,
+    })
+    return { mailed: !mailed.error, mailError: mailed.error?.message }
   },
   async patchUser(id: string, input: Record<string, unknown>) {
     const { data: session } = await supabase.auth.getSession()
