@@ -55,7 +55,7 @@ export function buildAlerts(input: { tasks: Task[]; ops: OpsState; systems: Syst
   return [
     row('overdue', overdue, 'Overdue tasks', '/board'),
     row('maint', maint, 'Maintenance due', '/maintenance?tab=schedule'),
-    row('certs', certs, 'Certificate expiring', '/cloud?tab=certificates'),
+    row('certs', certs, 'Certificate expiring', '/crew?tab=certificates'),
     row('stock', low, 'Low stock', '/inventory?tab=shopping'),
     row('defects', defects, 'Defect open', '/maintenance?tab=defects'),
     row('buy', purchase, 'Purchase pending', '/inventory?tab=shopping'),

@@ -4431,6 +4431,76 @@ html[data-theme='dark'] .cal-day.on { color: #09090b; }
 
 .cloud-add { margin-bottom: 22px; }
 
+.cloud-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.cloud-search {
+  flex: 1;
+  max-width: none;
+  min-height: 44px;
+  padding: 0 1rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+}
+
+.cloud-toolbar .btn {
+  position: relative;
+  cursor: pointer;
+}
+
+.cloud-toolbar .btn input {
+  display: none;
+}
+
+.cloud-file {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 550;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+}
+
+.cloud-file:hover { text-decoration: underline; }
+
+.cloud-acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1.1rem;
+  white-space: nowrap;
+}
+
+.cloud-acts .text-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.cloud-table th:last-child,
+.cloud-table td:last-child {
+  text-align: right;
+}
+
+.cloud-note {
+  margin: 0 0 1rem;
+  max-width: 46ch;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
 .job-new {
   height: 100%;
   min-height: 0;

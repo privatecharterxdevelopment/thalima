@@ -112,7 +112,7 @@ export function Notifications() {
       id: 'certs',
       count: alerts.find((a) => a.id === 'certs')?.count ?? 0,
       label: 'Certificates expiring',
-      to: '/cloud?tab=certificates',
+      to: '/crew?tab=certificates',
     },
   ].filter((row) => row.id !== 'acct' || canReviewAccounting(user))
 
