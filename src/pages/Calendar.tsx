@@ -155,6 +155,15 @@ export function Calendar() {
           {(() => {
             const key = romeDay(picked.toISOString())
             const awayToday = absences.filter((e) => e.from <= key && e.to >= key)
+            if (events.length === 0 && absences.length === 0) {
+              return (
+                <div className="diary-quiet">
+                  <img src="/yacht/tasks-empty.png" alt="" />
+                  <strong>No entries yet</strong>
+                  <p>Nothing is on the diary.</p>
+                </div>
+              )
+            }
             if (onDay.length === 0 && awayToday.length === 0) {
               return <p className="hint">Quiet.</p>
             }
