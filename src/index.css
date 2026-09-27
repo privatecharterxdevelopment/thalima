@@ -3379,11 +3379,10 @@ html[data-theme='dark'] .board-modern {
 }
 
 .tasks-empty-art {
-  width: min(100%, 58rem);
-  height: auto;
-  max-height: min(46vh, 28rem);
+  width: min(100%, 56rem);
+  height: min(40vh, 24rem);
   object-fit: contain;
-  object-position: center bottom;
+  object-position: center center;
   margin: 0 0 0.2rem;
   pointer-events: none;
   user-select: none;
