@@ -95,28 +95,10 @@ export function CrewMembers() {
 
       {tab === 'list' && (
         <>
-          <div className="crew-people">
-            <div className="ops-views page-tabs crew-avatar-tabs" role="tablist">
-              {people.map((member) => (
-                <button
-                  key={member.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={member.id === selectedId}
-                  aria-label={member.name}
-                  title={member.name}
-                  className={member.id === selectedId ? 'on' : ''}
-                  onClick={() => selectWho(member.id)}
-                >
-                  <Avatar person={member} size="lg" />
-                </button>
-              ))}
-            </div>
-          </div>
           <table className="table inv-table crew-table">
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Crew</th>
               <th>Title</th>
               <th>Station</th>
               <th>Email</th>
@@ -136,8 +118,13 @@ export function CrewMembers() {
                 const presence = currentPresence(member.id, roster)
                 const until = presence === 'offboard' ? untilOffboard(member.id, roster) : undefined
                 return (
-                  <tr key={member.id} className={member.id === selectedId ? 'is-on' : ''}>
-                    <td>{member.name}</td>
+                  <tr key={member.id} className={member.id === selectedId ? 'is-on' : ''} onClick={() => selectWho(member.id)}>
+                    <td>
+                      <div className="crew-who">
+                        <Avatar person={member} size="lg" />
+                        <span>{member.name}</span>
+                      </div>
+                    </td>
                     <td>
                       {member.title}
                       {member.watch ? <div className="muted">{member.watch}</div> : null}
