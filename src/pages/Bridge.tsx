@@ -69,7 +69,6 @@ export function Bridge() {
     (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
   )
   const tripOnDay = ops.trips.find((t) => t.guests.length > 0 && tripCovers(t, picked))
-  const scheduleEmpty = events.length === 0 && ops.trips.length === 0
   const pickedLabel = picked.toLocaleDateString('en-GB', {
     weekday: 'long',
     day: 'numeric',
@@ -200,14 +199,6 @@ export function Bridge() {
               Open diary
             </button>
           </header>
-          {scheduleEmpty ? (
-            <div className="home-quiet">
-              <img src="/yacht/tasks-empty.png" alt="" />
-              <strong>Nothing scheduled</strong>
-              <p>There are no diary entries on the board.</p>
-            </div>
-          ) : (
-            <>
           <div className="home-week">
             {days.map((d) => {
               const on = sameDay(d, picked)
@@ -228,7 +219,9 @@ export function Bridge() {
           </div>
           <p className="home-day">{pickedLabel}</p>
           {dayEvents.length === 0 && !tripOnDay ? (
-            <p className="home-empty">Nothing in the diary.</p>
+            <div className="home-quiet">
+              <strong>Nothing in the diary.</strong>
+            </div>
           ) : (
             <ul className="home-events">
               {tripOnDay ? (
@@ -250,8 +243,6 @@ export function Bridge() {
                 </li>
               ))}
             </ul>
-          )}
-            </>
           )}
         </section>
 
