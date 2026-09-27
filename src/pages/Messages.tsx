@@ -119,7 +119,7 @@ export function Messages() {
             <div className="msgs">
               {thread.length === 0 ? (
                 <div className="chat-empty">
-                  <img src="/yacht/quiet.png" alt="" />
+                  <img src="/yacht/quiet-chat.png" alt="" />
                   <p>No messages yet. Write to {whoLabel}.</p>
                 </div>
               ) : (
@@ -174,7 +174,7 @@ export function Messages() {
           <section className="thread is-idle">
             <div className="msgs">
               <div className="chat-empty">
-                <img src="/yacht/quiet.png" alt="" />
+                <img src="/yacht/quiet-chat.png" alt="" />
                 <p>Pick a conversation to read or write.</p>
               </div>
             </div>

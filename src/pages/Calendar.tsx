@@ -161,7 +161,7 @@ export function Calendar() {
             if (onDay.length === 0 && awayToday.length === 0) {
               return (
                 <div className="quiet-empty">
-                  <img src="/yacht/quiet.png" alt="" />
+                  <img src="/yacht/quiet-calendar.png" alt="" />
                   <p>Quiet.</p>
                 </div>
               )
