@@ -7222,9 +7222,9 @@ html[data-theme='dark'] .home-allclear-mark {
   cursor: pointer;
 }
 
-.home-week button:hover { background: rgba(255, 255, 255, 0.05); }
+.home-week button:hover:not(.is-on) { background: rgba(255, 255, 255, 0.05); }
 
-html[data-theme='light'] .home-week button:hover { background: rgba(12, 16, 22, 0.04); }
+html[data-theme='light'] .home-week button:hover:not(.is-on) { background: rgba(12, 16, 22, 0.06); }
 
 .home-week small {
   font-size: 10.5px;
@@ -8043,10 +8043,17 @@ html[data-theme='dark'] .boat-mark path {
 }
 
 .home-week button.is-on,
-html[data-theme='dark'] .home-week button.is-on { background: var(--accent); }
+.home-week button.is-on:hover,
+html[data-theme='light'] .home-week button.is-on:hover,
+html[data-theme='dark'] .home-week button.is-on,
+html[data-theme='dark'] .home-week button.is-on:hover { background: var(--accent); }
 
 .home-week button.is-on small,
 .home-week button.is-on b,
+.home-week button.is-on:hover small,
+.home-week button.is-on:hover b,
+html[data-theme='light'] .home-week button.is-on:hover small,
+html[data-theme='light'] .home-week button.is-on:hover b,
 html[data-theme='dark'] .home-week button.is-on small,
 html[data-theme='dark'] .home-week button.is-on b { color: #fff; }
 
@@ -8065,11 +8072,11 @@ html[data-theme='dark'] .home-week button.is-on i { background: #fff; }
   align-items: stretch;
   height: 34px;
   border-radius: 8px;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--accent);
+  color: #fff;
 }
 
-html[data-theme='dark'] .create-menu { color: #0b1622; }
+html[data-theme='dark'] .create-menu { color: #fff; }
 
 .create-menu > button {
   display: inline-flex;

@@ -13,13 +13,11 @@ import { isOpenStatus } from '../lib/opsTasks'
 import type { CrewMember, Task } from '../types'
 
 function weekDays() {
-  const now = new Date()
-  const monday = new Date(now)
-  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7))
-  monday.setHours(12, 0, 0, 0)
+  const today = new Date()
+  today.setHours(12, 0, 0, 0)
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday)
-    d.setDate(monday.getDate() + i)
+    const d = new Date(today)
+    d.setDate(today.getDate() + (i - 3))
     return d
   })
 }
