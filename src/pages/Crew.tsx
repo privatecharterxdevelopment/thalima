@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useSearchParams } from 'react-router-dom'
+import { Avatar } from '../components/Avatar'
 import { SectionTabs } from '../components/SectionTabs'
 import { crew, deptLabel } from '../data/crew'
 import { certOverdue, certSoon } from '../lib/alerts'
@@ -56,6 +57,14 @@ export function CrewMembers() {
     if (fallback) setToId(fallback)
   }, [people, toId, user?.id])
 
+  useEffect(() => {
+    const who = params.get('who')
+    if (!who || people.some((c) => c.id === who)) return
+    const next = new URLSearchParams(params)
+    next.delete('who')
+    setParams(next, { replace: true })
+  }, [people, params, setParams])
+
   const certs = ops.certificates.filter((c) => c.kind === 'crew')
   const leave = roster
     .filter((e) => e.status === 'approved' && (e.duty === 'leave' || e.presence === 'offboard'))
@@ -87,11 +96,22 @@ export function CrewMembers() {
       {tab === 'list' && (
         <>
           <div className="crew-people">
-            <SectionTabs
-              value={selectedId}
-              onChange={selectWho}
-              tabs={people.map((c) => ({ id: c.id, label: c.name }))}
-            />
+            <div className="ops-views page-tabs crew-avatar-tabs" role="tablist">
+              {people.map((member) => (
+                <button
+                  key={member.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={member.id === selectedId}
+                  aria-label={member.name}
+                  title={member.name}
+                  className={member.id === selectedId ? 'on' : ''}
+                  onClick={() => selectWho(member.id)}
+                >
+                  <Avatar person={member} size="lg" />
+                </button>
+              ))}
+            </div>
           </div>
           <table className="table inv-table crew-table">
           <thead>

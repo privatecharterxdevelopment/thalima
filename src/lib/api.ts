@@ -129,6 +129,20 @@ export const api = {
     if (!res.ok) throw new Error(data.error || 'Request failed.')
     return { user: data.user as LiveUser }
   },
+  async deleteUser(id: string) {
+    const { error } = await supabase.rpc('delete_crew_user', { p_id: id })
+    if (error) throw new Error(error.message.replace(/^.*?:\s*/, '') || 'Could not remove user.')
+    return { ok: true }
+  },
+  subscribeCrew(onChange: () => void) {
+    const channel = supabase
+      .channel(`crew-profiles-${crypto.randomUUID()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => onChange())
+      .subscribe()
+    return () => {
+      void supabase.removeChannel(channel)
+    }
+  },
   async patchUser(id: string, input: Record<string, unknown>) {
     const { data: session } = await supabase.auth.getSession()
     const token = session.session?.access_token

@@ -495,6 +495,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSnap((s) => ({ ...s }))
   }, [])
 
+  useEffect(() => {
+    if (!snap.userId) return
+    return api.subscribeCrew(() => {
+      void refreshPeople().catch(() => {})
+    })
+  }, [snap.userId, refreshPeople])
+
   const login = useCallback((id: string, remember = true) => {
     try {
       if (remember) localStorage.setItem(KEEP, id)

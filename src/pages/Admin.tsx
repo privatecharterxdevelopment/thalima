@@ -44,6 +44,7 @@ const actionLabel: Record<string, string> = {
   user_update: 'User updated',
   user_activate: 'User activated',
   user_deactivate: 'User deactivated',
+  user_delete: 'User removed',
   task_create: 'Task',
   expense_submit: 'Expense submitted',
   expense_approve: 'Expense approved',
@@ -123,6 +124,9 @@ export function Admin() {
   useEffect(() => {
     void loadUsers().catch((err: Error) => setError(err.message))
     void loadLogs().catch(() => {})
+    return api.subscribeCrew(() => {
+      void loadUsers().catch((err: Error) => setError(err.message))
+    })
   }, [])
 
   if (!user) return null
@@ -159,6 +163,17 @@ export function Admin() {
       if (input.password) setPw((s) => ({ ...s, [id]: '' }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Update failed.')
+    }
+  }
+
+  async function remove(person: LiveUser) {
+    if (!window.confirm(`Remove ${person.name}? They lose access and disappear from the crew.`)) return
+    setError('')
+    try {
+      await api.deleteUser(person.id)
+      await loadUsers()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not remove user.')
     }
   }
 
@@ -336,12 +351,8 @@ export function Admin() {
                       </td>
                       <td>
                         {person.id === user.id ? null : (
-                          <button
-                            className="btn ghost"
-                            type="button"
-                            onClick={() => void patch(person.id, { active: !person.active })}
-                          >
-                            {person.active ? 'Deactivate' : 'Activate'}
+                          <button className="btn ghost" type="button" onClick={() => void remove(person)}>
+                            Delete
                           </button>
                         )}
                       </td>
