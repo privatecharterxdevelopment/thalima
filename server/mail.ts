@@ -1,4 +1,5 @@
 import './env'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { crew, deptLabel } from '../src/data/crew'
 import { dueLine } from '../src/lib/format'
 import type { Department } from '../src/types'
@@ -47,32 +48,58 @@ type MailJob = {
 }
 
 function appUrl(origin?: string) {
+  const clean = (value: string) => value.replace(/\/$/, '')
+  if (origin && /^https?:\/\/[^\s]+$/i.test(origin) && !/localhost|127\.0\.0\.1/i.test(origin)) return clean(origin)
   const env = (process.env.APP_URL || process.env.VITE_APP_URL || '').replace(/\/$/, '')
-  if (env) return env
-  if (origin && /^https?:\/\/[^\s]+$/i.test(origin)) return origin.replace(/\/$/, '')
-  return 'http://localhost:5173'
+  if (env && !/localhost|127\.0\.0\.1/i.test(env)) return env
+  if (origin && /^https?:\/\/[^\s]+$/i.test(origin)) return clean(origin)
+  return 'https://thalima.vercel.app'
 }
 
 function mailFrom() {
   return process.env.MAIL_FROM || 'Thalima <onboarding@resend.dev>'
 }
 
-function wrap(inner: string) {
+function wrap(base: string, inner: string) {
   return `<!doctype html>
-<html><body style="margin:0;background:#f3f4f7;font-family:Inter,Helvetica,Arial,sans-serif;color:#1c2430;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f7;padding:48px 16px;">
-    <tr><td align="center">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:24px;padding:48px 40px;text-align:left;">
-        <tr><td style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#8a9099;padding-bottom:24px;">Thalima</td></tr>
-        ${inner}
+<html>
+<body style="margin:0;padding:0;background:#f4f5f8;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f8;">
+    <tr><td align="center" style="padding:48px 20px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #e7e9ee;border-radius:22px;">
+        <tr><td style="padding:40px 40px 36px;font-family:Inter,Helvetica,Arial,sans-serif;color:#2c3140;text-align:left;">
+          <img src="${esc(base)}/logo.png" alt="Thalima" width="128" style="display:block;width:128px;height:auto;margin:0 0 32px;border:0;">
+          ${inner}
+          <p style="margin:36px 0 0;padding-top:22px;border-top:1px solid #e7e9ee;font-size:12px;line-height:1.6;color:#8b909a;">Thalima crew ops. The button opens this item when you are signed in.</p>
+        </td></tr>
       </table>
     </td></tr>
   </table>
 </body></html>`
 }
 
-function btn(href: string, label: string) {
-  return `<p style="margin:32px 0 0;"><a href="${href}" style="display:inline-block;background:#1c2430;color:#fff;text-decoration:none;padding:14px 22px;border-radius:999px;font-size:15px;">${label}</a></p>`
+function actions(primary: { href: string; label: string }, secondary?: { href: string; label: string }) {
+  const main = `<a href="${esc(primary.href)}" style="display:inline-block;background:#6d5cff;color:#ffffff;text-decoration:none;font-family:Inter,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;letter-spacing:-0.02em;padding:14px 22px;border-radius:999px;">${esc(primary.label)}</a>`
+  const alt = secondary
+    ? `<a href="${esc(secondary.href)}" style="display:inline-block;background:#ffffff;color:#2c3140;text-decoration:none;font-family:Inter,Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;letter-spacing:-0.02em;padding:13px 18px;border-radius:999px;border:1px solid #e7e9ee;">${esc(secondary.label)}</a>`
+    : ''
+  return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:28px;"><tr><td style="padding:0 10px 8px 0;">${main}</td>${alt ? `<td style="padding:0 0 8px 0;">${alt}</td>` : ''}</tr></table>`
+}
+
+function kicker(label: string) {
+  return `<p style="margin:0 0 12px;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#8b909a;">${esc(label)}</p>`
+}
+
+function title(value: string) {
+  return `<p style="margin:0 0 14px;font-size:26px;line-height:1.25;font-weight:600;letter-spacing:-0.04em;color:#2c3140;">${esc(value)}</p>`
+}
+
+function copy(value: string) {
+  return `<p style="margin:0 0 22px;font-size:15px;line-height:1.65;color:#5c6470;">${esc(value)}</p>`
+}
+
+function meta(label: string, value: string) {
+  return `<p style="margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#8b909a;">${esc(label)}</p><p style="margin:0 0 16px;font-size:16px;line-height:1.45;color:#2c3140;">${esc(value)}</p>`
 }
 
 function person(id: string) {
@@ -80,20 +107,42 @@ function person(id: string) {
   return { name: row?.name ?? id, email: row?.email ?? '', first: row?.name.split(' ')[0] ?? id }
 }
 
-async function emailFor(id: string) {
-  if (supabaseAdminReady()) {
-    const { data } = await supabaseAdmin().from('profiles').select('email, name').eq('id', id).maybeSingle()
+export function mailLookup(token: string) {
+  const url = process.env.VITE_SUPABASE_URL || ''
+  const anon = process.env.VITE_SUPABASE_ANON_KEY || ''
+  if (!token || !url || !anon) return null
+  return createClient(url, anon, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
+
+async function emailFor(id: string, db?: SupabaseClient | null) {
+  const read = async (client: SupabaseClient) => {
+    const { data } = await client.from('profiles').select('email, name').eq('id', id).maybeSingle()
     if (data?.email) return { email: String(data.email), name: String(data.name || id) }
+    return null
+  }
+  if (db) {
+    const hit = await read(db)
+    if (hit) return hit
+  }
+  if (supabaseAdminReady()) {
+    const hit = await read(supabaseAdmin())
+    if (hit) return hit
   }
   const p = person(id)
   return { email: p.email, name: p.name }
 }
 
-export function taskJobs(payload: TaskPayload): Promise<MailJob[]> {
-  const from = person(payload.fromId).first
+export async function taskJobs(payload: TaskPayload, db?: SupabaseClient | null): Promise<MailJob[]> {
+  const fromWho = await emailFor(payload.fromId, db)
+  const from = fromWho.name.split(' ')[0] || 'Crew'
   const due = dueLine(payload.due)
   const station = deptLabel[payload.department]
-  const href = `${appUrl(payload.origin)}/board/${encodeURIComponent(payload.taskId)}`
+  const base = appUrl(payload.origin)
+  const href = `${base}/board/${encodeURIComponent(payload.taskId)}`
+  const notes = `${base}/notifications`
   const text = [
     `${payload.title}`,
     '',
@@ -103,23 +152,21 @@ export function taskJobs(payload: TaskPayload): Promise<MailJob[]> {
     `Station: ${station}`,
     `From: ${from}`,
     '',
-    `Open: ${href}`,
+    `Open task: ${href}`,
+    `Notifications: ${notes}`,
   ].join('\n')
-  const html = wrap(`
-    <tr><td style="font-size:28px;line-height:1.25;font-weight:600;padding-bottom:16px;">${esc(payload.title)}</td></tr>
-    <tr><td style="font-size:16px;line-height:1.65;color:#4a5160;padding-bottom:28px;max-width:40ch;">${esc(payload.body)}</td></tr>
-    <tr><td>
-      <p style="margin:0 0 8px;font-size:14px;color:#8a9099;">Due</p>
-      <p style="margin:0 0 20px;font-size:18px;">${esc(due)}</p>
-      <p style="margin:0 0 8px;font-size:14px;color:#8a9099;">Station</p>
-      <p style="margin:0 0 20px;font-size:18px;">${esc(station)} · assigned by ${esc(from)}</p>
-      ${btn(href, 'Open task')}
-      <p style="margin:28px 0 0;font-size:14px;line-height:1.6;color:#8a9099;">On the board you can set Open, In progress, Awaiting or Completed.</p>
-    </td></tr>
-  `)
+  const html = wrap(
+    base,
+    `${kicker('Task')}
+    ${title(payload.title)}
+    ${payload.body ? copy(payload.body) : ''}
+    ${meta('Due', due)}
+    ${meta('Station', `${station} · assigned by ${from}`)}
+    ${actions({ href, label: 'Open task' }, { href: notes, label: 'Notifications' })}`,
+  )
   return Promise.all(
     payload.assigneeIds.map(async (id) => {
-      const to = await emailFor(id)
+      const to = await emailFor(id, db)
       return {
         to: to.email,
         toName: to.name,
@@ -131,11 +178,13 @@ export function taskJobs(payload: TaskPayload): Promise<MailJob[]> {
   )
 }
 
-export async function expenseJobs(payload: ExpensePayload): Promise<MailJob[]> {
-  const from = person(payload.fromId).first
-  const href = `${appUrl(payload.origin)}/accounting/expenses/${encodeURIComponent(payload.expenseId)}`
-  const queue = `${appUrl(payload.origin)}/accounting/approvals`
-  const to = await emailFor(payload.approverId)
+export async function expenseJobs(payload: ExpensePayload, db?: SupabaseClient | null): Promise<MailJob[]> {
+  const fromWho = await emailFor(payload.fromId, db)
+  const from = fromWho.name.split(' ')[0] || 'Crew'
+  const base = appUrl(payload.origin)
+  const href = `${base}/accounting/expenses/${encodeURIComponent(payload.expenseId)}`
+  const queue = `${base}/accounting/approvals`
+  const to = await emailFor(payload.approverId, db)
   const text = [
     `Approval needed · ${payload.ref}`,
     payload.vendor,
@@ -145,22 +194,17 @@ export async function expenseJobs(payload: ExpensePayload): Promise<MailJob[]> {
     `From: ${from}`,
     `Open: ${href}`,
   ].join('\n')
-  const html = wrap(`
-    <tr><td style="font-size:28px;line-height:1.25;font-weight:600;padding-bottom:16px;">Approval needed</td></tr>
-    <tr><td style="font-size:16px;line-height:1.65;color:#4a5160;padding-bottom:28px;">${esc(from)} submitted ${esc(payload.ref)} for your sign-off.</td></tr>
-    <tr><td>
-      <p style="margin:0 0 8px;font-size:14px;color:#8a9099;">Vendor</p>
-      <p style="margin:0 0 20px;font-size:18px;">${esc(payload.vendor)}</p>
-      <p style="margin:0 0 8px;font-size:14px;color:#8a9099;">Amount</p>
-      <p style="margin:0 0 20px;font-size:18px;">${esc(payload.amount)}</p>
-      <p style="margin:0 0 8px;font-size:14px;color:#8a9099;">Category</p>
-      <p style="margin:0 0 20px;font-size:18px;">${esc(payload.category)}</p>
-      ${payload.description ? `<p style="margin:0 0 8px;font-size:14px;color:#8a9099;">Note</p><p style="margin:0 0 20px;font-size:16px;line-height:1.6;">${esc(payload.description)}</p>` : ''}
-      ${btn(href, 'Review expense')}
-      <p style="margin:16px 0 0;font-size:14px;"><a href="${queue}" style="color:#1c2430;">Open approvals inbox</a></p>
-      <p style="margin:28px 0 0;font-size:14px;line-height:1.6;color:#8a9099;">Approve or reject from Accounting. You cannot approve your own claim.</p>
-    </td></tr>
-  `)
+  const html = wrap(
+    base,
+    `${kicker('Approval')}
+    ${title('Approval needed')}
+    ${copy(`${from} submitted ${payload.ref} for your sign-off.`)}
+    ${meta('Vendor', payload.vendor)}
+    ${meta('Amount', payload.amount)}
+    ${meta('Category', payload.category)}
+    ${payload.description ? meta('Note', payload.description) : ''}
+    ${actions({ href, label: 'Open expense' }, { href: queue, label: 'Approvals' })}`,
+  )
   return [
     {
       to: to.email,
@@ -172,27 +216,27 @@ export async function expenseJobs(payload: ExpensePayload): Promise<MailJob[]> {
   ]
 }
 
-export async function chatJobs(payload: ChatPayload): Promise<MailJob[]> {
-  const sender = await emailFor(payload.fromId)
+export async function chatJobs(payload: ChatPayload, db?: SupabaseClient | null): Promise<MailJob[]> {
+  const sender = await emailFor(payload.fromId, db)
   const from = sender.name.split(' ')[0] || 'Crew'
-  const href = `${appUrl(payload.origin)}/messages/${encodeURIComponent(payload.channelId)}`
+  const base = appUrl(payload.origin)
+  const href = `${base}/messages/${encodeURIComponent(payload.channelId)}`
+  const notes = `${base}/notifications`
   const room = payload.channelId === 'all' ? 'All crew' : 'you'
   const preview = payload.text.trim()
   const subject = payload.channelId === 'all' ? `Chat · ${from} in All crew` : `Chat · ${from}`
-  const html = wrap(`
-    <tr><td style="font-size:28px;line-height:1.25;font-weight:600;padding-bottom:16px;">${esc(from)} wrote</td></tr>
-    <tr><td style="font-size:16px;line-height:1.65;color:#4a5160;padding-bottom:28px;max-width:40ch;">${esc(preview)}</td></tr>
-    <tr><td>
-      <p style="margin:0 0 8px;font-size:14px;color:#8a9099;">Conversation</p>
-      <p style="margin:0 0 20px;font-size:18px;">${esc(room)}</p>
-      ${btn(href, 'Open chat')}
-      <p style="margin:28px 0 0;font-size:14px;line-height:1.6;color:#8a9099;">Reply from Chat on Thalima.</p>
-    </td></tr>
-  `)
-  const text = [`${from} wrote to ${room}:`, '', preview, '', `Open: ${href}`].join('\n')
+  const html = wrap(
+    base,
+    `${kicker('Chat')}
+    ${title(`${from} wrote`)}
+    ${copy(preview)}
+    ${meta('Conversation', room)}
+    ${actions({ href, label: 'Open chat' }, { href: notes, label: 'Notifications' })}`,
+  )
+  const text = [`${from} wrote to ${room}:`, '', preview, '', `Open chat: ${href}`, `Notifications: ${notes}`].join('\n')
   return Promise.all(
     payload.toIds.filter((id) => id && id !== payload.fromId).map(async (id) => {
-      const to = await emailFor(id)
+      const to = await emailFor(id, db)
       return {
         to: to.email,
         toName: to.name,

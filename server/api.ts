@@ -10,7 +10,7 @@ import { parseStations } from '../src/lib/format'
 import { opsFromUnknown } from '../src/lib/opsSync'
 import { ensureOps, MAX_UPLOAD, putShared, readShared, readUpload, saveUpload } from './ops'
 import { ownerFromBearer, publicProfile, supabaseAdmin, supabaseAdminReady } from './supabaseAdmin'
-import { chatJobs, expenseJobs, sendJobs, taskJobs, type NotifyPayload } from './mail'
+import { chatJobs, expenseJobs, mailLookup, sendJobs, taskJobs, type NotifyPayload } from './mail'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DATA = join(ROOT, 'data')
@@ -272,8 +272,13 @@ export async function handleApi(req: IncomingMessage, res: ServerResponse) {
         send(res, 400, { error: 'Invalid notification.' })
         return
       }
+      const lookup = mailLookup(token)
       const jobs =
-        body.kind === 'expense' ? await expenseJobs(body) : body.kind === 'chat' ? await chatJobs(body) : await taskJobs(body)
+        body.kind === 'expense'
+          ? await expenseJobs(body, lookup)
+          : body.kind === 'chat'
+            ? await chatJobs(body, lookup)
+            : await taskJobs(body, lookup)
       const sent = await sendJobs(jobs)
       send(res, 200, { ok: true, sent: sent.length })
       return

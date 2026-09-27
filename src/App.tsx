@@ -43,8 +43,12 @@ import { SiteProvider } from './site'
 
 function Gate({ children }: { children: ReactNode }) {
   const { user, authReady } = useStore()
+  const loc = useLocation()
   if (!authReady) return null
-  if (!user) return <Navigate to="/login" replace />
+  if (!user) {
+    const next = `${loc.pathname}${loc.search}`
+    return <Navigate to={`/login?next=${encodeURIComponent(next)}`} replace />
+  }
   return children
 }
 

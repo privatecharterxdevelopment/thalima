@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import { Link, Navigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { useStore } from '../store'
 
+function safeNext(raw: string | null) {
+  if (!raw || !raw.startsWith('/') || raw.startsWith('//') || raw.startsWith('/login')) return ''
+  return raw
+}
+
 export function Login() {
   const { signIn, user, authReady } = useStore()
+  const [params] = useSearchParams()
+  const next = safeNext(params.get('next'))
   const videoRef = useRef<HTMLVideoElement>(null)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -46,7 +53,7 @@ export function Login() {
   }, [])
 
   if (!authReady) return null
-  if (user) return <Navigate to={user.access === 'owner' ? '/admin' : '/app'} replace />
+  if (user) return <Navigate to={next || (user.access === 'owner' ? '/admin' : '/app')} replace />
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault()
