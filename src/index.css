@@ -2330,6 +2330,47 @@ html[data-theme='dark'] .bubble.mine .txt { color: #09090b; }
   flex-wrap: wrap;
 }
 
+.crew-list-table {
+  width: 100%;
+}
+
+.crew-list-who {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 12rem;
+}
+
+.crew-list-who strong {
+  display: block;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.crew-list-contact {
+  display: grid;
+  gap: 4px;
+}
+
+.crew-list-contact a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.crew-list-contact a:hover {
+  text-decoration: underline;
+}
+
+.crew-list-chat {
+  text-align: right;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.crew-list-chat .btn {
+  min-width: 4.5rem;
+}
+
 .crew-profile-pane {
   max-width: 42rem;
 }

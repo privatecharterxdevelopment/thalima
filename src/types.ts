@@ -71,6 +71,8 @@ export type CrewMember = {
   photo: string
   access?: Access
   active?: boolean
+  /** Profile created_at from live seats */
+  joinedAt?: string
 }
 
 export type AttachedFile = {

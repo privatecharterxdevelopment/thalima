@@ -36,6 +36,7 @@ type ProfileRow = {
   photo: string
   access: 'owner' | 'crew'
   active: boolean
+  created_at?: string | null
 }
 
 function asUser(row: ProfileRow): LiveUser {
@@ -56,6 +57,7 @@ function asUser(row: ProfileRow): LiveUser {
     photo: row.photo,
     access: row.access,
     active: row.active,
+    joinedAt: row.created_at || undefined,
   }
 }
 

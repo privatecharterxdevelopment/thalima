@@ -52,5 +52,6 @@ export function publicProfile(row: Record<string, unknown>) {
     photo: row.photo,
     access: row.access,
     active: Boolean(row.active),
+    joinedAt: typeof row.created_at === 'string' ? row.created_at : undefined,
   }
 }
