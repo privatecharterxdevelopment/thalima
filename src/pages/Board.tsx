@@ -5,6 +5,7 @@ import { crew, deptLabel, statusLabel } from '../data/crew'
 import { canSeeTask, sortTasks, stationsOf, taskAssignees } from '../lib/format'
 import { isOpenStatus } from '../lib/opsTasks'
 import { useStore } from '../store'
+import { CreateMenu } from '../components/CreateMenu'
 import { TaskCard } from '../components/TaskCard'
 import type { Department, TaskStatus } from '../types'
 
@@ -109,6 +110,28 @@ export function Board() {
         </div>
       </div>
 
+      {view === 'tasks' && filtered.length === 0 ? (
+        <div className="tasks-empty">
+          <img className="tasks-empty-art" src="/yacht/tasks-empty.png" alt="" />
+          <h2>No tasks yet</h2>
+          <p>There are currently no tasks matching your filters.</p>
+          <div className="tasks-empty-stats">
+            <span>
+              <i className="is-open" />
+              <b>0</b> Open tasks
+            </span>
+            <span>
+              <i className="is-today" />
+              <b>0</b> Due today
+            </span>
+            <span>
+              <i className="is-late" />
+              <b>0</b> Overdue
+            </span>
+          </div>
+          {canCreate ? <CreateMenu /> : null}
+        </div>
+      ) : (
       <section className="ops-list">
         {view === 'defects'
           ? defectList.map((d) => {
@@ -151,8 +174,8 @@ export function Board() {
           : filtered.map((t) => <TaskCard key={t.id} task={t} />)}
 
         {view === 'defects' && defectList.length === 0 && <p className="ops-empty">No open defects.</p>}
-        {view === 'tasks' && filtered.length === 0 && <p className="ops-empty">Nothing here.</p>}
       </section>
+      )}
     </div>
   )
 }
