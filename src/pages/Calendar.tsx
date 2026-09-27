@@ -61,6 +61,9 @@ export function Calendar() {
   const onDay = visible
     .filter((e) => sameDay(new Date(e.start), picked))
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+  const pickedKey = romeDay(picked.toISOString())
+  const dayQuiet =
+    onDay.length === 0 && absences.filter((e) => e.from <= pickedKey && e.to >= pickedKey).length === 0
   const cells = monthDays(cursor)
   const monthName = cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'Europe/Rome' })
   const canWrite = role === 'all' ? admin : canEditCalendar(user, role)
@@ -151,12 +154,17 @@ export function Calendar() {
           </span>
           {viewSwitch}
         </div>
-        <div className="cal-list">
+        <div className={`cal-list ${dayQuiet ? 'is-quiet' : ''}`}>
           {(() => {
             const key = romeDay(picked.toISOString())
             const awayToday = absences.filter((e) => e.from <= key && e.to >= key)
             if (onDay.length === 0 && awayToday.length === 0) {
-              return <p className="hint">Quiet.</p>
+              return (
+                <div className="quiet-empty">
+                  <img src="/yacht/quiet.png" alt="" />
+                  <p>Quiet.</p>
+                </div>
+              )
             }
             return (
               <>

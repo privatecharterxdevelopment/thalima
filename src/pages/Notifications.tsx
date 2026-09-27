@@ -152,7 +152,10 @@ export function Notifications() {
         </div>
 
         {items.length === 0 ? (
-          <p className="note-empty">Nothing on your seats right now.</p>
+          <div className="quiet-empty">
+            <img src="/yacht/quiet.png" alt="" />
+            <p>Nothing on your seats right now.</p>
+          </div>
         ) : filtered.length === 0 ? (
           <p className="note-empty">Nothing in this filter.</p>
         ) : (

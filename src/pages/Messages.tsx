@@ -119,13 +119,7 @@ export function Messages() {
             <div className="msgs">
               {thread.length === 0 ? (
                 <div className="chat-empty">
-                  {peer ? (
-                    <Avatar person={peer} size="lg" />
-                  ) : (
-                    <span className="ch-group" aria-hidden>
-                      <Users size={20} strokeWidth={1.75} />
-                    </span>
-                  )}
+                  <img src="/yacht/quiet.png" alt="" />
                   <p>No messages yet. Write to {whoLabel}.</p>
                 </div>
               ) : (
@@ -180,9 +174,7 @@ export function Messages() {
           <section className="thread is-idle">
             <div className="msgs">
               <div className="chat-empty">
-                <span className="ch-group" aria-hidden>
-                  <Users size={20} strokeWidth={1.75} />
-                </span>
+                <img src="/yacht/quiet.png" alt="" />
                 <p>Pick a conversation to read or write.</p>
               </div>
             </div>
