@@ -1,9 +1,10 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import { api, type ActivityRow, type LiveUser } from '../lib/api'
-import { canManageUsers, stationsOf } from '../lib/format'
+import { canManageUsers, clock, stationsOf } from '../lib/format'
+import { romeDayLong } from '../lib/opsTasks'
 import { useStore } from '../store'
-import type { AccountingRole, Department, Role } from '../types'
+import type { AccountingRole, Department, Role, RoutineReport } from '../types'
 
 const roles: { id: Role; label: string }[] = [
   { id: 'captain', label: 'Captain' },
@@ -100,8 +101,59 @@ function StationPicks({
   )
 }
 
+function AdminReports({ people, reports }: { people: LiveUser[]; reports: RoutineReport[] }) {
+  const groups = new Map<string, { id: string; name: string; position: string; rows: RoutineReport[] }>()
+  for (const report of [...reports].sort((a, b) => b.signedAt.localeCompare(a.signedAt))) {
+    const person = people.find((row) => row.id === report.userId)
+    const hit = groups.get(report.userId) ?? {
+      id: report.userId,
+      name: person?.name || report.userName,
+      position: person?.title || report.positionLabel,
+      rows: [],
+    }
+    hit.rows.push(report)
+    groups.set(report.userId, hit)
+  }
+  const list = [...groups.values()].sort((a, b) => a.name.localeCompare(b.name))
+  if (list.length === 0) return <p className="acct-empty">No signed reports yet.</p>
+  return (
+    <div className="admin-report-list">
+      {list.map((group) => (
+        <article key={group.id}>
+          <h3>
+            {group.name}
+            <span>{group.position}</span>
+          </h3>
+          {group.rows.map((report) => {
+            const done = report.lines.filter((line) => line.done).length
+            return (
+              <div key={report.id} className="admin-report">
+                <p>
+                  {romeDayLong(report.day)} · signed {clock(report.signedAt)} · {done} of {report.lines.length}
+                </p>
+                <ul>
+                  {report.lines.map((line) => (
+                    <li key={line.itemId}>
+                      <b>{line.done ? 'Done' : 'Open'}</b>
+                      <span>
+                        {line.title}
+                        {line.done && line.doneAt ? ` · ${clock(line.doneAt)}` : ''}
+                        {line.value ? ` · ${line.value}${line.unit ? ` ${line.unit}` : ''}` : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )
+          })}
+        </article>
+      ))}
+    </div>
+  )
+}
+
 export function Admin() {
-  const { user, refreshPeople } = useStore()
+  const { user, ops, refreshPeople } = useStore()
   const [tab, setTab] = useState<'users' | 'logs'>('users')
   const [people, setPeople] = useState<LiveUser[]>([])
   const [logs, setLogs] = useState<ActivityRow[]>([])
@@ -361,6 +413,11 @@ export function Admin() {
                 })}
               </tbody>
             </table>
+          </section>
+
+          <section className="admin-panel admin-reports">
+            <h2>Reports</h2>
+            <AdminReports people={people} reports={ops.routineReports ?? []} />
           </section>
         </>
       ) : (

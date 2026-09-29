@@ -4,7 +4,7 @@ import { Check, Plus, Trash2 } from 'lucide-react'
 import { SignaturePad } from '../components/SignaturePad'
 import { crew } from '../data/crew'
 import { routineKey, routineSeeds } from '../data/routines'
-import { clock } from '../lib/format'
+import { clock, relative } from '../lib/format'
 import { romeDay, romeDayLong } from '../lib/opsTasks'
 import { useStore } from '../store'
 
@@ -80,8 +80,15 @@ export function Routine() {
     setFlag('')
   }
 
+  const history = ticks
+    .filter((tick) => tick.done && items.some((item) => item.id === tick.itemId))
+    .slice()
+    .sort((a, b) => b.at.localeCompare(a.at))
+
   return (
     <div className="rx">
+      <div className="rx-grid">
+        <div className="rx-col">
       <header className="rx-head">
         <div>
           <h1>Routine check</h1>
@@ -90,7 +97,6 @@ export function Routine() {
             {filed ? ` · filed ${clock(filed.signedAt)}` : ''}
           </p>
         </div>
-        <Link to="/reports">My reports</Link>
       </header>
 
       <ul className="rx-list">
@@ -112,7 +118,7 @@ export function Routine() {
               >
                 {checked ? <Check size={15} strokeWidth={2.6} /> : null}
               </button>
-              <div className="rx-main">
+              <div className="rx-body">
                 <div className="rx-line">
                   <strong>{item.title}</strong>
                   <span className="rx-meta">
@@ -231,6 +237,49 @@ export function Routine() {
           </form>
         </>
       )}
+        </div>
+        <aside className="rx-side" aria-label="Routine history">
+          <section className="task-log">
+            <p className="eyebrow">Log</p>
+            {history.length === 0 && !filed ? <p className="task-log-empty">Nothing checked yet.</p> : null}
+            {filed ? (
+              <article className="task-log-item is-sys">
+                <span className="task-log-dot" />
+                <div>
+                  <p>
+                    <b>{filed.userName.split(' ')[0]}</b>
+                    <time>{relative(filed.signedAt)}</time>
+                  </p>
+                  <p className="task-log-sys">Routine task</p>
+                  <p>Signed</p>
+                </div>
+              </article>
+            ) : null}
+            {history.map((tick) => {
+              const item = items.find((row) => row.id === tick.itemId)
+              const who = crew.find((person) => person.id === tick.by)
+              const reading = tick.value?.trim()
+              return (
+                <article key={tick.id} className="task-log-item is-sys">
+                  <span className="task-log-dot" />
+                  <div>
+                    <p>
+                      <b>{who?.name.split(' ')[0] ?? 'Crew'}</b>
+                      <time>{relative(tick.at)}</time>
+                    </p>
+                    <p className="task-log-sys">Routine task</p>
+                    <p>
+                      Done
+                      {item ? ` · ${item.title}` : ''}
+                      {reading ? ` · ${reading}${item?.unit ? ` ${item.unit}` : ''}` : ''}
+                    </p>
+                  </div>
+                </article>
+              )
+            })}
+          </section>
+        </aside>
+      </div>
     </div>
   )
 }
