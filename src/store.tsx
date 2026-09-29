@@ -236,7 +236,8 @@ type Store = AppSnapshot & {
   addHandover: (input: { toId: string; body: string }) => void
   toggleRoutine: (itemId: string) => void
   noteRoutine: (itemId: string, note: string) => void
-  addRoutineItem: (title: string) => void
+  setRoutineValue: (itemId: string, value: string) => void
+  addRoutineItem: (title: string, unit?: string) => void
   removeRoutineItem: (id: string) => void
   addRoutineNote: (text: string) => void
   signRoutine: (signature: string) => void
@@ -884,7 +885,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
-  const writeRoutineTick = useCallback((itemId: string, patch: { done?: boolean; note?: string }) => {
+  const writeRoutineTick = useCallback((itemId: string, patch: { done?: boolean; note?: string; value?: string }) => {
     setSnap((s) => {
       if (!s.userId) return s
       if (routineFiled(s.userId, s.ops)) return s
@@ -899,6 +900,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             ...hit,
             done: patch.done ?? hit.done,
             note: patch.note ?? hit.note,
+            value: patch.value ?? hit.value ?? '',
             by: s.userId,
             at: new Date().toISOString(),
           }
@@ -909,6 +911,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
             day,
             done: patch.done ?? false,
             note: patch.note ?? '',
+            value: patch.value ?? '',
             by: s.userId,
             at: new Date().toISOString(),
           }
@@ -940,9 +943,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [writeRoutineTick],
   )
 
-  const addRoutineItem = useCallback((title: string) => {
+  const setRoutineValue = useCallback(
+    (itemId: string, value: string) => {
+      writeRoutineTick(itemId, { value })
+    },
+    [writeRoutineTick],
+  )
+
+  const addRoutineItem = useCallback((title: string, unit?: string) => {
     const text = title.trim()
     if (!text) return
+    const reading = unit?.trim() || undefined
     setSnap((s) => {
       if (!s.userId) return s
       if (routineFiled(s.userId, s.ops)) return s
@@ -957,6 +968,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
               id: uid('ri'),
               position: routineKey(person),
               title: text,
+              unit: reading,
               createdBy: s.userId,
               createdAt: new Date().toISOString(),
             },
@@ -1026,8 +1038,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const custom = (s.ops.routineItems ?? []).filter((row) => row.position === position)
       const ticks = (s.ops.routineTicks ?? []).filter((tick) => tick.day === day)
       const lines = [
-        ...seeds.map((row) => ({ id: row.id, title: row.title })),
-        ...custom.map((row) => ({ id: row.id, title: row.title })),
+        ...seeds.map((row) => ({ id: row.id, title: row.title, unit: row.unit })),
+        ...custom.map((row) => ({ id: row.id, title: row.title, unit: row.unit })),
       ].map((item) => {
         const tick = ticks.find((row) => row.itemId === item.id)
         return {
@@ -1036,6 +1048,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           done: Boolean(tick?.done),
           doneAt: tick?.done ? tick.at : undefined,
           note: tick?.note ?? '',
+          value: tick?.value || undefined,
+          unit: item.unit,
         }
       })
       const notes = (s.ops.routineNotes ?? [])
@@ -1056,7 +1070,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         lines,
         notes,
       }
-      filed = `Signed ${label.toLowerCase()} routine for ${romeDayLong(day)}. ${done} of ${lines.length} done.`
+      filed = `Signed the routine check for ${romeDayLong(day)}. ${done} of ${lines.length} done.`
       return {
         ...s,
         log: [{ id: uid('l'), at: signedAt, authorId: s.userId, text: filed }, ...s.log],
@@ -1633,6 +1647,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addHandover,
       toggleRoutine,
       noteRoutine,
+      setRoutineValue,
       addRoutineItem,
       removeRoutineItem,
       addRoutineNote,
@@ -1657,7 +1672,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       reset,
       user,
     }),
-    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, toggleRoutine, noteRoutine, addRoutineItem, removeRoutineItem, addRoutineNote, signRoutine, addDrill, setTripPrepped, addTrip, updateTrip, addTripNote, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
+    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, toggleRoutine, noteRoutine, setRoutineValue, addRoutineItem, removeRoutineItem, addRoutineNote, signRoutine, addDrill, setTripPrepped, addTrip, updateTrip, addTripNote, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

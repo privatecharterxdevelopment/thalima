@@ -2,19 +2,33 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Plus, Trash2 } from 'lucide-react'
 import { SignaturePad } from '../components/SignaturePad'
-import { routineKey, routineLabel, routineSeeds } from '../data/routines'
+import { crew } from '../data/crew'
+import { routineKey, routineSeeds } from '../data/routines'
 import { clock } from '../lib/format'
 import { romeDay, romeDayLong } from '../lib/opsTasks'
 import { useStore } from '../store'
-import { crew } from '../data/crew'
+
+type Point = { id: string; title: string; unit?: string; custom: boolean }
 
 export function Routine() {
-  const { user, ops, toggleRoutine, noteRoutine, addRoutineItem, removeRoutineItem, addRoutineNote, signRoutine } =
-    useStore()
+  const {
+    user,
+    ops,
+    toggleRoutine,
+    setRoutineValue,
+    addRoutineItem,
+    removeRoutineItem,
+    signRoutine,
+    addTask,
+  } = useStore()
   const [entry, setEntry] = useState('')
-  const [note, setNote] = useState('')
-  const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [unit, setUnit] = useState('')
+  const [readings, setReadings] = useState<Record<string, string>>({})
   const [ink, setInk] = useState('')
+  const [raise, setRaise] = useState<string | null>(null)
+  const [colleague, setColleague] = useState('')
+  const [flag, setFlag] = useState('')
+  const [sent, setSent] = useState<Record<string, { id: string; name: string }>>({})
   if (!user) return null
 
   const position = routineKey(user)
@@ -22,26 +36,20 @@ export function Routine() {
   const filed = (ops.routineReports ?? []).find((row) => row.userId === user.id && row.day === day)
   const seeds = routineSeeds(position)
   const custom = (ops.routineItems ?? []).filter((row) => row.position === position)
-  const items = [
+  const items: Point[] = [
     ...seeds.map((row) => ({ ...row, custom: false })),
-    ...custom.map((row) => ({ id: row.id, title: row.title, custom: true })),
+    ...custom.map((row) => ({ id: row.id, title: row.title, unit: row.unit, custom: true })),
   ]
   const ticks = (ops.routineTicks ?? []).filter((tick) => tick.day === day)
-  const notes = (ops.routineNotes ?? []).filter((row) => row.position === position && row.day === day)
   const done = items.filter((item) => ticks.find((tick) => tick.itemId === item.id)?.done).length
+  const others = crew.filter((person) => person.id !== user.id && person.active !== false)
 
   const onAdd = (e: FormEvent) => {
     e.preventDefault()
-    if (filed) return
-    addRoutineItem(entry)
+    if (filed || !entry.trim()) return
+    addRoutineItem(entry, unit)
     setEntry('')
-  }
-
-  const onNote = (e: FormEvent) => {
-    e.preventDefault()
-    if (filed) return
-    addRoutineNote(note)
-    setNote('')
+    setUnit('')
   }
 
   const onSign = (e: FormEvent) => {
@@ -51,57 +59,138 @@ export function Routine() {
     setInk('')
   }
 
-  return (
-    <div className="routine">
-      <p className="routine-kicker">Daily routine</p>
-      <h1>{routineLabel(position)}</h1>
-      <p className="routine-lead">
-        {romeDayLong(day)}. {done} of {items.length} done.
-        {filed
-          ? ` Filed at ${clock(filed.signedAt)}.`
-          : ' Sign the day to file it under My reports. Checks start again tomorrow morning.'}
-      </p>
-      <p className="routine-links">
-        <Link to="/reports">My reports</Link>
-      </p>
+  const notify = (item: Point) => {
+    const who = others.find((person) => person.id === colleague)
+    if (!who) return
+    const tick = ticks.find((row) => row.itemId === item.id)
+    const reading = (readings[item.id] ?? tick?.value ?? '').trim()
+    const detail = flag.trim() || 'Flagged from the routine check.'
+    const body = reading ? `${detail}\nReading: ${reading}${item.unit ? ` ${item.unit}` : ''}` : detail
+    const id = addTask({
+      title: item.title,
+      body,
+      department: who.department,
+      assigneeId: who.id,
+      urgency: 'soon',
+      due: new Date(Date.now() + 4 * 3600_000).toISOString(),
+      kind: 'routine',
+    })
+    setSent((prev) => ({ ...prev, [item.id]: { id, name: who.name.split(' ')[0] } }))
+    setRaise(null)
+    setFlag('')
+  }
 
-      <ul className="routine-list">
+  return (
+    <div className="rx">
+      <header className="rx-head">
+        <div>
+          <h1>Routine check</h1>
+          <p>
+            {romeDayLong(day)} · {done} of {items.length}
+            {filed ? ` · filed ${clock(filed.signedAt)}` : ''}
+          </p>
+        </div>
+        <Link to="/reports">My reports</Link>
+      </header>
+
+      <ul className="rx-list">
         {items.map((item) => {
           const tick = ticks.find((row) => row.itemId === item.id)
-          const saved = tick?.note ?? ''
-          const value = drafts[item.id] ?? saved
+          const checked = Boolean(tick?.done)
+          const reading = readings[item.id] ?? tick?.value ?? ''
+          const open = raise === item.id
+          const posted = sent[item.id]
           return (
-            <li key={item.id} className={tick?.done ? 'is-done' : ''}>
+            <li key={item.id} className={checked ? 'is-done' : ''}>
               <button
                 type="button"
-                className={`routine-check${tick?.done ? ' on' : ''}`}
-                aria-pressed={Boolean(tick?.done)}
-                aria-label={tick?.done ? `Mark ${item.title} open` : `Mark ${item.title} done`}
+                className={`rx-tick${checked ? ' on' : ''}`}
+                aria-pressed={checked}
+                aria-label={checked ? `Mark ${item.title} open` : `Mark ${item.title} done`}
                 disabled={Boolean(filed)}
                 onClick={() => toggleRoutine(item.id)}
               >
-                {tick?.done ? <Check size={14} strokeWidth={2.4} /> : null}
+                {checked ? <Check size={15} strokeWidth={2.6} /> : null}
               </button>
-              <div>
-                <div className="routine-title">
+              <div className="rx-main">
+                <div className="rx-line">
                   <strong>{item.title}</strong>
-                  {tick?.done && tick.at ? <em>{clock(tick.at)}</em> : null}
-                  {item.custom && !filed ? (
-                    <button type="button" className="routine-drop" onClick={() => removeRoutineItem(item.id)} aria-label="Remove entry">
-                      <Trash2 size={14} strokeWidth={1.7} />
-                    </button>
-                  ) : null}
+                  <span className="rx-meta">
+                    {item.unit ? (
+                      <label className="rx-read">
+                        <input
+                          inputMode="decimal"
+                          value={reading}
+                          placeholder="—"
+                          aria-label={`${item.title} reading`}
+                          disabled={Boolean(filed)}
+                          onChange={(e) => setReadings((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                          onBlur={() => {
+                            if (!filed && reading !== (tick?.value ?? '')) setRoutineValue(item.id, reading)
+                          }}
+                        />
+                        <span>{item.unit}</span>
+                      </label>
+                    ) : null}
+                    {checked && tick?.at ? <time>{clock(tick.at)}</time> : null}
+                    {item.custom && !filed ? (
+                      <button type="button" className="rx-drop" onClick={() => removeRoutineItem(item.id)} aria-label="Remove point">
+                        <Trash2 size={14} strokeWidth={1.7} />
+                      </button>
+                    ) : null}
+                  </span>
                 </div>
-                <input
-                  className="routine-item-note"
-                  value={value}
-                  placeholder="Add a note"
-                  disabled={Boolean(filed)}
-                  onChange={(e) => setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                  onBlur={() => {
-                    if (!filed && value !== saved) noteRoutine(item.id, value)
-                  }}
-                />
+                {filed ? null : posted ? (
+                  <p className="rx-sent">
+                    Task sent to {posted.name}. <Link to={`/board/${posted.id}`}>Open task</Link>
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    className="rx-flag"
+                    aria-expanded={open}
+                    onClick={() => {
+                      setRaise(open ? null : item.id)
+                      setColleague('')
+                      setFlag('')
+                    }}
+                  >
+                    Notify colleague
+                  </button>
+                )}
+                {open && !filed ? (
+                  <form
+                    className="rx-raise"
+                    onSubmit={(e) => {
+                      e.preventDefault()
+                      notify(item)
+                    }}
+                  >
+                    <textarea
+                      rows={2}
+                      value={flag}
+                      onChange={(e) => setFlag(e.target.value)}
+                      placeholder="What is missing, or what they need to know"
+                    />
+                    <div>
+                      <select
+                        value={colleague}
+                        aria-label="Colleague"
+                        onChange={(e) => setColleague(e.target.value)}
+                      >
+                        <option value="">Choose a colleague</option>
+                        {others.map((person) => (
+                          <option key={person.id} value={person.id}>
+                            {person.name} · {person.title}
+                          </option>
+                        ))}
+                      </select>
+                      <button type="submit" disabled={!colleague}>
+                        Create task
+                      </button>
+                    </div>
+                  </form>
+                ) : null}
               </div>
             </li>
           )
@@ -109,37 +198,21 @@ export function Routine() {
       </ul>
 
       {filed ? (
-        <section className="routine-filed">
-          <h2>Filed</h2>
-          <p>
-            {romeDayLong(day)} is signed and locked. The report keeps each line and the time it was completed.
-          </p>
-          {notes.length > 0 ? (
-            <ul className="routine-notes" style={{ listStyle: 'none', margin: '0 0 1.2rem', padding: 0 }}>
-              {notes.map((row) => (
-                <li key={row.id}>
-                  <b>
-                    {crew.find((c) => c.id === row.by)?.name.split(' ')[0] ?? 'Crew'} · {clock(row.at)}
-                  </b>
-                  <span>{row.text}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          <figure className="report-sign">
-            <figcaption>Signature · {clock(filed.signedAt)}</figcaption>
-            <img src={filed.signature} alt={`Signature of ${filed.userName}`} />
-          </figure>
-          <Link to="/reports">Open My reports</Link>
-        </section>
+        <p className="rx-locked">This day’s check is signed and locked.</p>
       ) : (
         <>
-          <form className="routine-add" onSubmit={onAdd}>
+          <form className="rx-add" onSubmit={onAdd}>
             <input
               value={entry}
               onChange={(e) => setEntry(e.target.value)}
-              placeholder="New entry for this position"
-              aria-label="New routine entry"
+              placeholder="Add a point"
+              aria-label="New routine point"
+            />
+            <input
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              placeholder="Unit"
+              aria-label="Unit, optional"
             />
             <button type="submit" disabled={!entry.trim()}>
               <Plus size={15} strokeWidth={2} />
@@ -147,38 +220,9 @@ export function Routine() {
             </button>
           </form>
 
-          <section className="routine-notes">
-            <h2>Notes</h2>
-            {notes.length === 0 ? <p className="routine-quiet">Nothing written for today.</p> : null}
-            <ul>
-              {notes.map((row) => (
-                <li key={row.id}>
-                  <b>
-                    {crew.find((c) => c.id === row.by)?.name.split(' ')[0] ?? 'Crew'} · {clock(row.at)}
-                  </b>
-                  <span>{row.text}</span>
-                </li>
-              ))}
-            </ul>
-            <form onSubmit={onNote}>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Write a note for today’s routine"
-                rows={3}
-              />
-              <button type="submit" disabled={!note.trim()}>
-                Save note
-              </button>
-            </form>
-          </section>
-
-          <form className="routine-sign" onSubmit={onSign}>
+          <form className="rx-sign" onSubmit={onSign}>
             <h2>Sign and file</h2>
-            <p>
-              Filing signs today’s {routineLabel(position).toLowerCase()} checklist for {romeDayLong(day)}. The report
-              cannot be changed afterwards.
-            </p>
+            <p>Filing locks today’s routine check for {romeDayLong(day)}. The report keeps each tick and each reading.</p>
             <SignaturePad onInk={setInk} />
             <button type="submit" disabled={!ink}>
               Sign and file

@@ -330,6 +330,7 @@ export type RoutineItem = {
   id: string
   position: string
   title: string
+  unit?: string
   createdBy: string
   createdAt: string
 }
@@ -341,6 +342,7 @@ export type RoutineTick = {
   day: string
   done: boolean
   note: string
+  value?: string
   by: string
   at: string
 }
@@ -360,6 +362,8 @@ export type RoutineReportLine = {
   done: boolean
   doneAt?: string
   note: string
+  value?: string
+  unit?: string
 }
 
 export type RoutineReportNote = {

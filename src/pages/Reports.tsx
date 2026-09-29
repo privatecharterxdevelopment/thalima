@@ -66,7 +66,10 @@ export function Reports() {
                     </span>
                     <div>
                       <strong>{line.title}</strong>
-                      <em>{line.done && line.doneAt ? `Done ${clock(line.doneAt)}` : 'Not done'}</em>
+                      <em>
+                        {line.done && line.doneAt ? `Done ${clock(line.doneAt)}` : 'Not done'}
+                        {line.value ? ` · ${line.value}${line.unit ? ` ${line.unit}` : ''}` : ''}
+                      </em>
                       {line.note ? <span>{line.note}</span> : null}
                     </div>
                   </li>
