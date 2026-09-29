@@ -20,7 +20,7 @@ import {
 } from './lib/siteCopy'
 import { useStore } from './store'
 
-export const CHARTER_TO = 'info@thalima.com'
+export const CHARTER_TO = 'info@sea-odyxey.com'
 export const MAIL = `mailto:${CHARTER_TO}?subject=Thalima%20charter`
 export const BROCHURE = '/yacht/brochure.pdf'
 export const SPEC = '/yacht/spec.pdf'

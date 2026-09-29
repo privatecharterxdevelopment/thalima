@@ -79,7 +79,7 @@ export function Login() {
                 type="email"
                 name="email"
                 autoComplete="username"
-                placeholder="captain@thalima.com"
+                placeholder="demo@sea-odyxey.com"
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value)
@@ -123,9 +123,8 @@ export function Login() {
             </button>
           </form>
           <p className="gate-hint">
-            Seats: <code>captain@</code> <code>mate@</code> <code>stew@</code> <code>engineer@</code>{' '}
-            <code>chef@</code> <code>info@</code>
-            <span className="gate-hint-sub"> · password is the local part (padded to 6 with 1)</span>
+            Demo <code>demo@sea-odyxey.com</code> / <code>Demo1</code>
+            <span className="gate-hint-sub">Seats: captain, mate, stew, engineer, chef, info @sea-odyxey.com</span>
           </p>
         </div>
         <div className="gate-media" aria-hidden="true">

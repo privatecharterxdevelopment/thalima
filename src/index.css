@@ -300,6 +300,11 @@ html.is-gate #root {
   color: #c5ccd4;
 }
 
+.gate-hint-sub {
+  display: block;
+  margin-top: 0.55rem;
+}
+
 .gate-media {
   position: relative;
   min-height: 0;
