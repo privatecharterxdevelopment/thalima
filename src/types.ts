@@ -354,6 +354,33 @@ export type RoutineNote = {
   at: string
 }
 
+export type RoutineReportLine = {
+  itemId: string
+  title: string
+  done: boolean
+  doneAt?: string
+  note: string
+}
+
+export type RoutineReportNote = {
+  text: string
+  at: string
+  by: string
+}
+
+export type RoutineReport = {
+  id: string
+  userId: string
+  userName: string
+  position: string
+  positionLabel: string
+  day: string
+  signedAt: string
+  signature: string
+  lines: RoutineReportLine[]
+  notes: RoutineReportNote[]
+}
+
 export type ProvisionCat = 'food' | 'beverage' | 'wine' | 'toiletries' | 'cleaning' | 'laundry'
 
 export type ProvisionItem = {
@@ -464,6 +491,7 @@ export type OpsState = {
   routineItems?: RoutineItem[]
   routineTicks?: RoutineTick[]
   routineNotes?: RoutineNote[]
+  routineReports?: RoutineReport[]
 }
 
 export type StockItem = {

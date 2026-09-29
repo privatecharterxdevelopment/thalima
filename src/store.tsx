@@ -29,8 +29,8 @@ import {
   nextExpenseRef,
 } from './lib/accounting'
 import { addDays, dutyOf, presenceOf, rosterAudit, selfStatusLabel } from './lib/roster'
-import { romeDay } from './lib/opsTasks'
-import { routineKey } from './data/routines'
+import { romeDay, romeDayLong } from './lib/opsTasks'
+import { routineKey, routineLabel, routineSeeds } from './data/routines'
 import type {
   AppSnapshot,
   AttachedFile,
@@ -47,6 +47,7 @@ import type {
   PurchaseStatus,
   PurchaseRequest,
   ProvisionItem,
+  RoutineReport,
   StockItem,
   RosterEntry,
   SelfStatus,
@@ -83,6 +84,11 @@ function namesFor(ids: string[]) {
 
 function withNote(task: Task, note: TaskNote): Task {
   return { ...task, notes: [...(task.notes ?? []), note] }
+}
+
+function routineFiled(userId: string | null, ops: OpsState, day = romeDay()) {
+  if (!userId) return false
+  return (ops.routineReports ?? []).some((row) => row.userId === userId && row.day === day)
 }
 
 function tripNote(authorId: string, text: string, kind: TripNote['kind'] = 'note'): TripNote {
@@ -233,6 +239,7 @@ type Store = AppSnapshot & {
   addRoutineItem: (title: string) => void
   removeRoutineItem: (id: string) => void
   addRoutineNote: (text: string) => void
+  signRoutine: (signature: string) => void
   addDrill: (input: { kind: DrillKind; note: string }) => void
   setTripPrepped: (id: string) => void
   addTrip: (input: Omit<Trip, 'id' | 'prepped' | 'log'>) => string
@@ -880,6 +887,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const writeRoutineTick = useCallback((itemId: string, patch: { done?: boolean; note?: string }) => {
     setSnap((s) => {
       if (!s.userId) return s
+      if (routineFiled(s.userId, s.ops)) return s
       const person = crew.find((c) => c.id === s.userId)
       if (!person) return s
       const position = routineKey(person)
@@ -937,6 +945,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!text) return
     setSnap((s) => {
       if (!s.userId) return s
+      if (routineFiled(s.userId, s.ops)) return s
       const person = crew.find((c) => c.id === s.userId)
       if (!person) return s
       return {
@@ -960,6 +969,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const removeRoutineItem = useCallback(
     (id: string) => {
+      if (routineFiled(snapRef.current.userId, snapRef.current.ops)) return
       markDeleted('routineItems', id)
       setSnap((s) => ({
         ...s,
@@ -977,6 +987,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!body) return
     setSnap((s) => {
       if (!s.userId) return s
+      if (routineFiled(s.userId, s.ops)) return s
       const person = crew.find((c) => c.id === s.userId)
       if (!person) return s
       return {
@@ -997,6 +1008,62 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         },
       }
     })
+  }, [])
+
+  const signRoutine = useCallback((signature: string) => {
+    const ink = signature.trim()
+    if (!ink.startsWith('data:image/')) return
+    let filed = ''
+    setSnap((s) => {
+      if (!s.userId) return s
+      const person = crew.find((c) => c.id === s.userId)
+      if (!person) return s
+      const day = romeDay()
+      const reports = s.ops.routineReports ?? []
+      if (reports.some((row) => row.userId === s.userId && row.day === day)) return s
+      const position = routineKey(person)
+      const seeds = routineSeeds(position)
+      const custom = (s.ops.routineItems ?? []).filter((row) => row.position === position)
+      const ticks = (s.ops.routineTicks ?? []).filter((tick) => tick.day === day)
+      const lines = [
+        ...seeds.map((row) => ({ id: row.id, title: row.title })),
+        ...custom.map((row) => ({ id: row.id, title: row.title })),
+      ].map((item) => {
+        const tick = ticks.find((row) => row.itemId === item.id)
+        return {
+          itemId: item.id,
+          title: item.title,
+          done: Boolean(tick?.done),
+          doneAt: tick?.done ? tick.at : undefined,
+          note: tick?.note ?? '',
+        }
+      })
+      const notes = (s.ops.routineNotes ?? [])
+        .filter((row) => row.position === position && row.day === day)
+        .map((row) => ({ text: row.text, at: row.at, by: row.by }))
+      const done = lines.filter((line) => line.done).length
+      const signedAt = new Date().toISOString()
+      const label = routineLabel(position)
+      const report: RoutineReport = {
+        id: uid('rr'),
+        userId: s.userId,
+        userName: person.name,
+        position,
+        positionLabel: label,
+        day,
+        signedAt,
+        signature: ink,
+        lines,
+        notes,
+      }
+      filed = `Signed ${label.toLowerCase()} routine for ${romeDayLong(day)}. ${done} of ${lines.length} done.`
+      return {
+        ...s,
+        log: [{ id: uid('l'), at: signedAt, authorId: s.userId, text: filed }, ...s.log],
+        ops: { ...s.ops, routineReports: [report, ...reports] },
+      }
+    })
+    if (filed) recordActivity('routine_report', filed)
   }, [])
 
   const addDrill = useCallback((input: { kind: DrillKind; note: string }) => {
@@ -1569,6 +1636,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       addRoutineItem,
       removeRoutineItem,
       addRoutineNote,
+      signRoutine,
       addDrill,
       setTripPrepped,
       addTrip,
@@ -1589,7 +1657,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       reset,
       user,
     }),
-    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, toggleRoutine, noteRoutine, addRoutineItem, removeRoutineItem, addRoutineNote, addDrill, setTripPrepped, addTrip, updateTrip, addTripNote, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
+    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, toggleRoutine, noteRoutine, addRoutineItem, removeRoutineItem, addRoutineNote, signRoutine, addDrill, setTripPrepped, addTrip, updateTrip, addTripNote, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

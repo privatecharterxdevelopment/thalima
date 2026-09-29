@@ -1,30 +1,25 @@
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { Check, Plus, Trash2 } from 'lucide-react'
+import { SignaturePad } from '../components/SignaturePad'
 import { routineKey, routineLabel, routineSeeds } from '../data/routines'
-import { romeDay } from '../lib/opsTasks'
+import { clock } from '../lib/format'
+import { romeDay, romeDayLong } from '../lib/opsTasks'
 import { useStore } from '../store'
 import { crew } from '../data/crew'
 
-function dayLine(day: string) {
-  const [year, month, date] = day.split('-').map(Number)
-  const stamp = new Date(Date.UTC(year, month - 1, date, 12))
-  return stamp.toLocaleDateString('en-GB', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    timeZone: 'UTC',
-  })
-}
-
 export function Routine() {
-  const { user, ops, toggleRoutine, noteRoutine, addRoutineItem, removeRoutineItem, addRoutineNote } = useStore()
+  const { user, ops, toggleRoutine, noteRoutine, addRoutineItem, removeRoutineItem, addRoutineNote, signRoutine } =
+    useStore()
   const [entry, setEntry] = useState('')
   const [note, setNote] = useState('')
   const [drafts, setDrafts] = useState<Record<string, string>>({})
+  const [ink, setInk] = useState('')
   if (!user) return null
 
   const position = routineKey(user)
   const day = romeDay()
+  const filed = (ops.routineReports ?? []).find((row) => row.userId === user.id && row.day === day)
   const seeds = routineSeeds(position)
   const custom = (ops.routineItems ?? []).filter((row) => row.position === position)
   const items = [
@@ -37,14 +32,23 @@ export function Routine() {
 
   const onAdd = (e: FormEvent) => {
     e.preventDefault()
+    if (filed) return
     addRoutineItem(entry)
     setEntry('')
   }
 
   const onNote = (e: FormEvent) => {
     e.preventDefault()
+    if (filed) return
     addRoutineNote(note)
     setNote('')
+  }
+
+  const onSign = (e: FormEvent) => {
+    e.preventDefault()
+    if (!ink) return
+    signRoutine(ink)
+    setInk('')
   }
 
   return (
@@ -52,7 +56,13 @@ export function Routine() {
       <p className="routine-kicker">Daily routine</p>
       <h1>{routineLabel(position)}</h1>
       <p className="routine-lead">
-        {dayLine(day)}. {done} of {items.length} done. Checks start again tomorrow morning.
+        {romeDayLong(day)}. {done} of {items.length} done.
+        {filed
+          ? ` Filed at ${clock(filed.signedAt)}.`
+          : ' Sign the day to file it under My reports. Checks start again tomorrow morning.'}
+      </p>
+      <p className="routine-links">
+        <Link to="/reports">My reports</Link>
       </p>
 
       <ul className="routine-list">
@@ -67,6 +77,7 @@ export function Routine() {
                 className={`routine-check${tick?.done ? ' on' : ''}`}
                 aria-pressed={Boolean(tick?.done)}
                 aria-label={tick?.done ? `Mark ${item.title} open` : `Mark ${item.title} done`}
+                disabled={Boolean(filed)}
                 onClick={() => toggleRoutine(item.id)}
               >
                 {tick?.done ? <Check size={14} strokeWidth={2.4} /> : null}
@@ -74,7 +85,8 @@ export function Routine() {
               <div>
                 <div className="routine-title">
                   <strong>{item.title}</strong>
-                  {item.custom ? (
+                  {tick?.done && tick.at ? <em>{clock(tick.at)}</em> : null}
+                  {item.custom && !filed ? (
                     <button type="button" className="routine-drop" onClick={() => removeRoutineItem(item.id)} aria-label="Remove entry">
                       <Trash2 size={14} strokeWidth={1.7} />
                     </button>
@@ -84,9 +96,10 @@ export function Routine() {
                   className="routine-item-note"
                   value={value}
                   placeholder="Add a note"
+                  disabled={Boolean(filed)}
                   onChange={(e) => setDrafts((prev) => ({ ...prev, [item.id]: e.target.value }))}
                   onBlur={() => {
-                    if (value !== saved) noteRoutine(item.id, value)
+                    if (!filed && value !== saved) noteRoutine(item.id, value)
                   }}
                 />
               </div>
@@ -95,42 +108,84 @@ export function Routine() {
         })}
       </ul>
 
-      <form className="routine-add" onSubmit={onAdd}>
-        <input
-          value={entry}
-          onChange={(e) => setEntry(e.target.value)}
-          placeholder="New entry for this position"
-          aria-label="New routine entry"
-        />
-        <button type="submit" disabled={!entry.trim()}>
-          <Plus size={15} strokeWidth={2} />
-          Add
-        </button>
-      </form>
+      {filed ? (
+        <section className="routine-filed">
+          <h2>Filed</h2>
+          <p>
+            {romeDayLong(day)} is signed and locked. The report keeps each line and the time it was completed.
+          </p>
+          {notes.length > 0 ? (
+            <ul className="routine-notes" style={{ listStyle: 'none', margin: '0 0 1.2rem', padding: 0 }}>
+              {notes.map((row) => (
+                <li key={row.id}>
+                  <b>
+                    {crew.find((c) => c.id === row.by)?.name.split(' ')[0] ?? 'Crew'} · {clock(row.at)}
+                  </b>
+                  <span>{row.text}</span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          <figure className="report-sign">
+            <figcaption>Signature · {clock(filed.signedAt)}</figcaption>
+            <img src={filed.signature} alt={`Signature of ${filed.userName}`} />
+          </figure>
+          <Link to="/reports">Open My reports</Link>
+        </section>
+      ) : (
+        <>
+          <form className="routine-add" onSubmit={onAdd}>
+            <input
+              value={entry}
+              onChange={(e) => setEntry(e.target.value)}
+              placeholder="New entry for this position"
+              aria-label="New routine entry"
+            />
+            <button type="submit" disabled={!entry.trim()}>
+              <Plus size={15} strokeWidth={2} />
+              Add
+            </button>
+          </form>
 
-      <section className="routine-notes">
-        <h2>Notes</h2>
-        {notes.length === 0 ? <p className="routine-quiet">Nothing written for today.</p> : null}
-        <ul>
-          {notes.map((row) => (
-            <li key={row.id}>
-              <b>{crew.find((c) => c.id === row.by)?.name.split(' ')[0] ?? 'Crew'}</b>
-              <span>{row.text}</span>
-            </li>
-          ))}
-        </ul>
-        <form onSubmit={onNote}>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Write a note for today’s routine"
-            rows={3}
-          />
-          <button type="submit" disabled={!note.trim()}>
-            Save note
-          </button>
-        </form>
-      </section>
+          <section className="routine-notes">
+            <h2>Notes</h2>
+            {notes.length === 0 ? <p className="routine-quiet">Nothing written for today.</p> : null}
+            <ul>
+              {notes.map((row) => (
+                <li key={row.id}>
+                  <b>
+                    {crew.find((c) => c.id === row.by)?.name.split(' ')[0] ?? 'Crew'} · {clock(row.at)}
+                  </b>
+                  <span>{row.text}</span>
+                </li>
+              ))}
+            </ul>
+            <form onSubmit={onNote}>
+              <textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Write a note for today’s routine"
+                rows={3}
+              />
+              <button type="submit" disabled={!note.trim()}>
+                Save note
+              </button>
+            </form>
+          </section>
+
+          <form className="routine-sign" onSubmit={onSign}>
+            <h2>Sign and file</h2>
+            <p>
+              Filing signs today’s {routineLabel(position).toLowerCase()} checklist for {romeDayLong(day)}. The report
+              cannot be changed afterwards.
+            </p>
+            <SignaturePad onInk={setInk} />
+            <button type="submit" disabled={!ink}>
+              Sign and file
+            </button>
+          </form>
+        </>
+      )}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import {
   Bell,
   CalendarDays,
   ChevronRight,
+  ClipboardList,
   CloudSun,
   LogOut,
   MessageCircle,
@@ -59,6 +60,7 @@ export function AccountRail({
     { to: '/messages', label: 'Open chat', icon: MessageCircle, count: unreadChat },
     { to: '/calendar', label: 'Diary', icon: CalendarDays },
     { to: '/crew/schedule', label: 'My schedule', icon: Users },
+    { to: '/reports', label: 'My reports', icon: ClipboardList },
     { to: '/weather', label: 'Weather', icon: CloudSun },
     ...(canSubmitAccounting(user) ? [{ to: '/accounting/upload', label: 'Scan receipt', icon: Receipt }] : []),
   ]

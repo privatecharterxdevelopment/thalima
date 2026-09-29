@@ -92,6 +92,17 @@ export function romeDay(iso?: string) {
   return (iso ? new Date(iso) : new Date()).toLocaleDateString('en-CA', { timeZone: 'Europe/Rome' })
 }
 
+export function romeDayLong(day: string) {
+  const [year, month, date] = day.split('-').map(Number)
+  const stamp = new Date(Date.UTC(year, month - 1, date, 12))
+  return stamp.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+  })
+}
+
 export function isDueToday(iso: string) {
   return romeDay(iso) === romeDay()
 }

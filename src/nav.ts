@@ -37,6 +37,7 @@ export function titleFor(pathname: string, first: string) {
     .find((l) => pathname === l.to || pathname.startsWith(`${l.to}/`))
   if (match) return match.label
   if (pathname.startsWith('/routine')) return 'Routine'
+  if (pathname.startsWith('/reports')) return 'My reports'
   if (pathname.startsWith('/new')) return 'New task'
   if (pathname.startsWith('/weather')) return 'Weather'
   return first
