@@ -202,12 +202,17 @@ export function Shell() {
               </h1>
             </div>
             <div className="ahoy">
+              <NavLink to="/routine" className={({ isActive }) => `routine-btn${isActive ? ' on' : ''}`}>
+                Routine
+              </NavLink>
               {user.level <= 2 ? (
                 <>
                   <CreateMenu />
                   <span className="ahoy-sep" aria-hidden="true" />
                 </>
-              ) : null}
+              ) : (
+                <span className="ahoy-sep" aria-hidden="true" />
+              )}
               <button
                 className={`ahoy-who ${accountOpen ? 'on' : ''}`}
                 type="button"

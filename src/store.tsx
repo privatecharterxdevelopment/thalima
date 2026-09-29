@@ -30,6 +30,7 @@ import {
 } from './lib/accounting'
 import { addDays, dutyOf, presenceOf, rosterAudit, selfStatusLabel } from './lib/roster'
 import { romeDay } from './lib/opsTasks'
+import { routineKey } from './data/routines'
 import type {
   AppSnapshot,
   AttachedFile,
@@ -227,6 +228,11 @@ type Store = AppSnapshot & {
   removeDoc: (id: string) => void
   setPurchaseStatus: (id: string, status: PurchaseStatus) => void
   addHandover: (input: { toId: string; body: string }) => void
+  toggleRoutine: (itemId: string) => void
+  noteRoutine: (itemId: string, note: string) => void
+  addRoutineItem: (title: string) => void
+  removeRoutineItem: (id: string) => void
+  addRoutineNote: (text: string) => void
   addDrill: (input: { kind: DrillKind; note: string }) => void
   setTripPrepped: (id: string) => void
   addTrip: (input: Omit<Trip, 'id' | 'prepped' | 'log'>) => string
@@ -871,6 +877,128 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const writeRoutineTick = useCallback((itemId: string, patch: { done?: boolean; note?: string }) => {
+    setSnap((s) => {
+      if (!s.userId) return s
+      const person = crew.find((c) => c.id === s.userId)
+      if (!person) return s
+      const position = routineKey(person)
+      const day = romeDay()
+      const ticks = s.ops.routineTicks ?? []
+      const hit = ticks.find((t) => t.itemId === itemId && t.day === day)
+      const next = hit
+        ? {
+            ...hit,
+            done: patch.done ?? hit.done,
+            note: patch.note ?? hit.note,
+            by: s.userId,
+            at: new Date().toISOString(),
+          }
+        : {
+            id: uid('rt'),
+            itemId,
+            position,
+            day,
+            done: patch.done ?? false,
+            note: patch.note ?? '',
+            by: s.userId,
+            at: new Date().toISOString(),
+          }
+      return {
+        ...s,
+        ops: {
+          ...s.ops,
+          routineTicks: hit ? ticks.map((t) => (t.id === hit.id ? next : t)) : [next, ...ticks],
+        },
+      }
+    })
+  }, [])
+
+  const toggleRoutine = useCallback(
+    (itemId: string) => {
+      const person = crew.find((c) => c.id === snapRef.current.userId)
+      if (!person) return
+      const day = romeDay()
+      const hit = (snapRef.current.ops.routineTicks ?? []).find((t) => t.itemId === itemId && t.day === day)
+      writeRoutineTick(itemId, { done: !hit?.done })
+    },
+    [writeRoutineTick],
+  )
+
+  const noteRoutine = useCallback(
+    (itemId: string, note: string) => {
+      writeRoutineTick(itemId, { note })
+    },
+    [writeRoutineTick],
+  )
+
+  const addRoutineItem = useCallback((title: string) => {
+    const text = title.trim()
+    if (!text) return
+    setSnap((s) => {
+      if (!s.userId) return s
+      const person = crew.find((c) => c.id === s.userId)
+      if (!person) return s
+      return {
+        ...s,
+        ops: {
+          ...s.ops,
+          routineItems: [
+            {
+              id: uid('ri'),
+              position: routineKey(person),
+              title: text,
+              createdBy: s.userId,
+              createdAt: new Date().toISOString(),
+            },
+            ...(s.ops.routineItems ?? []),
+          ],
+        },
+      }
+    })
+  }, [])
+
+  const removeRoutineItem = useCallback(
+    (id: string) => {
+      markDeleted('routineItems', id)
+      setSnap((s) => ({
+        ...s,
+        ops: {
+          ...s.ops,
+          routineItems: (s.ops.routineItems ?? []).filter((row) => row.id !== id),
+        },
+      }))
+    },
+    [markDeleted],
+  )
+
+  const addRoutineNote = useCallback((text: string) => {
+    const body = text.trim()
+    if (!body) return
+    setSnap((s) => {
+      if (!s.userId) return s
+      const person = crew.find((c) => c.id === s.userId)
+      if (!person) return s
+      return {
+        ...s,
+        ops: {
+          ...s.ops,
+          routineNotes: [
+            {
+              id: uid('rn'),
+              position: routineKey(person),
+              day: romeDay(),
+              text: body,
+              by: s.userId,
+              at: new Date().toISOString(),
+            },
+            ...(s.ops.routineNotes ?? []),
+          ],
+        },
+      }
+    })
+  }, [])
+
   const addDrill = useCallback((input: { kind: DrillKind; note: string }) => {
     setSnap((s) => {
       if (!s.userId) return s
@@ -1436,6 +1564,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeDoc,
       setPurchaseStatus,
       addHandover,
+      toggleRoutine,
+      noteRoutine,
+      addRoutineItem,
+      removeRoutineItem,
+      addRoutineNote,
       addDrill,
       setTripPrepped,
       addTrip,
@@ -1456,7 +1589,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       reset,
       user,
     }),
-    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, addDrill, setTripPrepped, addTrip, updateTrip, addTripNote, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
+    [snap, authReady, signIn, refreshPeople, login, logout, setTheme, addTask, moveTask, updateTask, addTaskNote, addMessage, markRead, markTasksSeen, markNoticeSeen, dismissEmergency, claimEmergency, addLog, addEvent, removeEvent, addDoc, removeDoc, setPurchaseStatus, addHandover, toggleRoutine, noteRoutine, addRoutineItem, removeRoutineItem, addRoutineNote, addDrill, setTripPrepped, addTrip, updateTrip, addTripNote, addStockItem, addPurchase, addReceipt, addManualExpense, updateExpense, submitExpense, approveExpense, rejectExpense, addRosterRequest, decideRoster, setMyStatus, cancelRoster, reset, user],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>

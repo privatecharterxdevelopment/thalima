@@ -54,6 +54,9 @@ function mergeOpsState(current: OpsState, incoming: OpsState | undefined, delete
     drills: mergeList(current.drills, src.drills, deleted?.drills),
     trips: mergeList(current.trips, src.trips, deleted?.trips),
     stock: mergeList(current.stock, src.stock, deleted?.stock),
+    routineItems: mergeList(current.routineItems, src.routineItems, deleted?.routineItems),
+    routineTicks: mergeList(current.routineTicks, src.routineTicks, deleted?.routineTicks),
+    routineNotes: mergeList(current.routineNotes, src.routineNotes, deleted?.routineNotes),
   }
 }
 

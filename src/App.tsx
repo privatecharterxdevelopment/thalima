@@ -19,6 +19,7 @@ import { Calendar } from './pages/Calendar'
 import { EventPage } from './pages/EventPage'
 import { Galley } from './pages/Galley'
 import { NewJob } from './pages/NewJob'
+import { Routine } from './pages/Routine'
 import { Cloud } from './pages/Cloud'
 import { Maintenance } from './pages/Maintenance'
 import { Accounting } from './pages/Accounting'
@@ -110,6 +111,7 @@ export default function App() {
             <Route path="/board/:taskId" element={<TaskPage />} />
             <Route path="/board" element={<Board />} />
             <Route path="/new" element={<NewJob />} />
+            <Route path="/routine" element={<Routine />} />
             <Route path="/messages" element={<Messages />} />
             <Route path="/messages/:channelId" element={<Messages />} />
             <Route path="/notifications" element={<Notifications />} />

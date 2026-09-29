@@ -36,6 +36,7 @@ export function titleFor(pathname: string, first: string) {
     .sort((a, b) => b.to.length - a.to.length)
     .find((l) => pathname === l.to || pathname.startsWith(`${l.to}/`))
   if (match) return match.label
+  if (pathname.startsWith('/routine')) return 'Routine'
   if (pathname.startsWith('/new')) return 'New task'
   if (pathname.startsWith('/weather')) return 'Weather'
   return first

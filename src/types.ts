@@ -326,6 +326,34 @@ export type Handover = {
   body: string
 }
 
+export type RoutineItem = {
+  id: string
+  position: string
+  title: string
+  createdBy: string
+  createdAt: string
+}
+
+export type RoutineTick = {
+  id: string
+  itemId: string
+  position: string
+  day: string
+  done: boolean
+  note: string
+  by: string
+  at: string
+}
+
+export type RoutineNote = {
+  id: string
+  position: string
+  day: string
+  text: string
+  by: string
+  at: string
+}
+
 export type ProvisionCat = 'food' | 'beverage' | 'wine' | 'toiletries' | 'cleaning' | 'laundry'
 
 export type ProvisionItem = {
@@ -433,6 +461,9 @@ export type OpsState = {
   drills: Drill[]
   trips: Trip[]
   stock?: StockItem[]
+  routineItems?: RoutineItem[]
+  routineTicks?: RoutineTick[]
+  routineNotes?: RoutineNote[]
 }
 
 export type StockItem = {
