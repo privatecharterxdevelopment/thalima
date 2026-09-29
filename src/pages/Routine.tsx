@@ -125,9 +125,9 @@ export function Routine() {
                           aria-label={`${item.title} reading`}
                           disabled={Boolean(filed)}
                           onChange={(e) => setReadings((prev) => ({ ...prev, [item.id]: e.target.value }))}
-                          onBlur={() => {
-                            if (!filed && reading !== (tick?.value ?? '')) setRoutineValue(item.id, reading)
-                          }}
+                        onBlur={() => {
+                          if (!filed && reading !== (tick?.value ?? '')) setRoutineValue(item.id, reading)
+                        }}
                         />
                         <span>{item.unit}</span>
                       </label>
@@ -138,26 +138,27 @@ export function Routine() {
                         <Trash2 size={14} strokeWidth={1.7} />
                       </button>
                     ) : null}
+                    {filed || posted ? null : (
+                      <button
+                        type="button"
+                        className="rx-flag"
+                        aria-expanded={open}
+                        onClick={() => {
+                          setRaise(open ? null : item.id)
+                          setColleague('')
+                          setFlag('')
+                        }}
+                      >
+                        Notify
+                      </button>
+                    )}
                   </span>
                 </div>
-                {filed ? null : posted ? (
+                {posted ? (
                   <p className="rx-sent">
                     Task sent to {posted.name}. <Link to={`/board/${posted.id}`}>Open task</Link>
                   </p>
-                ) : (
-                  <button
-                    type="button"
-                    className="rx-flag"
-                    aria-expanded={open}
-                    onClick={() => {
-                      setRaise(open ? null : item.id)
-                      setColleague('')
-                      setFlag('')
-                    }}
-                  >
-                    Notify colleague
-                  </button>
-                )}
+                ) : null}
                 {open && !filed ? (
                   <form
                     className="rx-raise"
